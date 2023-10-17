@@ -1,10 +1,11 @@
 
-
+/// Module de base du billy engine
 pub mod billy_engine {
     use crate::maths;
     extern crate crossterm;
     use crossterm::{terminal};
 
+    ///Gestion d'un tableau à deux dimesion
     #[derive(Clone, Copy, Debug)]
     pub struct Point {
         x: i16,
@@ -12,6 +13,10 @@ pub mod billy_engine {
     }
 
     impl Point {
+        /// Permet de gérer les point
+        /// # Arguments
+        /// * 'x' Passe en paramètre la position de la largeure
+        /// * 'y' Passe en parapmètre la position de la hauteur
         pub fn new (x: i16,y: i16) -> Point {
             Point {
                 x: x,
@@ -26,11 +31,24 @@ pub mod billy_engine {
         pub fn get_y(&self) -> i16 {
             self.y
         }
-
+        /// Deplace un point de "position + nb" case
+        /// # Arguments
+        ///  * 'y' Valeur de déplacement
+        /// ```rust
+        /// let mut p = Point::new(4,1); // x = 4, y =1
+        /// p.move_y(5) // x = 4, y = 6
+        /// ```
         pub fn move_y(&mut self, y: i16 ) {
             self.y += y;
         }
 
+        /// Deplace un point de "position + nb" case
+        /// # Arguments
+        ///  * 'x' Valeur de déplacement
+        /// ```rust
+        /// let mut p = Point::new(4,1); // x = 4, y = 1
+        /// p.move_y(5) // x = 9, y = 1
+        /// ```
         pub fn move_x(&mut self, x: i16 ) {
             self.x += x;
         }
@@ -44,9 +62,13 @@ pub mod billy_engine {
         }
     }
 
+    /// Contient les informations de la fenètre
     pub struct ScreenData {
+        /// Largeur de l'écrans
         width: u16,
+        /// Hauteur de l'écrans
         heigth: u16,
+        /// Decalage de la hauteur peut êtres utiles dans certain terminale
         offset: u8
     }
 
@@ -63,16 +85,31 @@ pub mod billy_engine {
             }
         }
 
+        ///Permet de recalculer la taille de la fenètre
         pub fn refresh(&mut self) {
             let (terminal_width, terminal_heigth) = terminal::size().unwrap();
             self.width = terminal_width;
             self.heigth = terminal_heigth- self.offset as u16;
         }
 
+        /// Retourne la taille de l'écrans
+        ///
+        /// # Return
+        /// rend 'width' puis 'heigth'
+        ///
+        /// # Example
+        /// ```rust
+        /// let mut sd = ScreenData::new();
+        /// let (width, heigth) = sd.size();
+        /// // Ou pour récupérer une valeur
+        /// let width = sd.size().0
+        /// ```
+
         pub fn size(&self) -> usize {
             return usize::from( self.width * self.heigth);
         }
-
+        /// Définie le offset celui-ci change l'auteur de l'écrans
+        /// 'heigth - offset'
         pub fn set_offset(&mut self, offset: u8) {
             self.offset = offset;
         }

@@ -12,4 +12,3 @@ run-command=
 default=true
 
 [default.environment]
-PATH="/usr/bin:/home/matheo/.cargo/bin"
