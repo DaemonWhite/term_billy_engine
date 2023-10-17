@@ -1,6 +1,6 @@
 pub mod maths {
 
-    use crate::billy_engine::Point;
+    use crate::engine::engine::Point;
 
     #[macro_export]
     macro_rules! min_point {

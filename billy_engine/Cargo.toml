@@ -1,0 +1,14 @@
+[package]
+authors = ["DaemonWhite", "Neop2"]
+name = "billy_engine"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name= "billy_engine"
+path = "src/lib.rs"
+
+[dependencies]
+crossterm = "0.27"

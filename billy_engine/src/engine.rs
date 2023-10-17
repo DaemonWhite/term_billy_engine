@@ -1,7 +1,7 @@
 
 /// Module de base du billy engine
-pub mod billy_engine {
-    use crate::maths;
+pub mod engine {
+    use crate::maths::maths;
     extern crate crossterm;
     use crossterm::{terminal};
 
@@ -168,6 +168,8 @@ pub mod billy_engine {
 
     impl BillyEngine {
         pub fn new() -> BillyEngine {
+            let mut sd = ScreenData::new();
+            sd.set_offset(1);
             BillyEngine {
                 sd: ScreenData::new()
             }
