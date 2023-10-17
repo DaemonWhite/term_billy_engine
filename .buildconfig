@@ -1,0 +1,15 @@
+[default]
+name=Default
+runtime=host
+toolchain=default
+config-opts=
+run-opts=
+prefix=/home/matheo/.cache/gnome-builder/install/term_billy_engine/host
+app-id=
+postbuild=
+prebuild=
+run-command=
+default=true
+
+[default.environment]
+PATH="/usr/bin:/home/matheo/.cargo/bin"
