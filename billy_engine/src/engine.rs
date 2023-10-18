@@ -39,6 +39,7 @@ impl Point {
     /// # Arguments
     ///  * 'y' Valeur de déplacement
     /// ```rust
+    /// use billy_engine::engine::Point;
     /// let mut p = Point::new(4,1); // x = 4, y =1
     /// p.move_y(5) // x = 4, y = 6
     /// ```
@@ -50,6 +51,7 @@ impl Point {
     /// # Arguments
     ///  * 'x' Valeur de déplacement
     /// ```rust
+    /// use billy_engine::engine::Point;
     /// let mut p = Point::new(4,1); // x = 4, y = 1
     /// p.move_y(5) // x = 9, y = 1
     /// ```
@@ -87,6 +89,18 @@ impl ScreenData {
         }
     }
 
+    pub fn get_heigth(&self) -> u16 {
+    	self.heigth - self.offset as u16
+    }
+
+    pub fn get_width(&self) -> u16 {
+    	self.width
+    }
+
+    pub fn get_offset(&self) -> u8 {
+    	self.offset
+    }
+
     ///Permet de recalculer la taille de la fenètre
     pub fn refresh(&mut self) {
         let (terminal_width, terminal_heigth) = terminal::size().unwrap();
@@ -101,13 +115,15 @@ impl ScreenData {
     ///
     /// # Example
     /// ```rust
+    /// use billy_engine::engine::ScreenData;
+    ///
     /// let mut sd = ScreenData::new();
     /// let (width, heigth) = sd.size();
     /// // Ou pour récupérer une valeur
-    /// let width = sd.size().0
+    /// let width = sd.size().0;
     /// ```
-    pub fn size(&self) -> usize {
-        return usize::from( self.width * (self.heigth - self.offset as u16));
+    pub fn size(&self) -> (u16, u16) {
+        return (self.width, self.heigth - self.offset as u16);
     }
     /// Définie le offset celui-ci change l'auteur de l'écrans
     /// 'heigth - offset'
@@ -130,10 +146,12 @@ impl Triangle {
 	/// * 'p3' donne le troisième point
 	///
 	/// ```rust
+	/// use billy_engine::engine::{Triangle, Point};
+	///
 	/// let t1 = Triangle::new(
-	///		Point::(1,0),
-	/// 	Point::(5,5),
-	///     Point::(5,10),
+	///		Point::new(1, 0),
+	/// 	Point::new(5, 5),
+	///     Point::new(5, 10)
 	///	);
 
     pub fn new(p1:Point, p2:Point, p3:Point) -> Self {
@@ -203,12 +221,8 @@ impl BillyEngine {
         }
     }
 
-    pub fn get_size(&self) -> usize {
-        return self.sd.size() as usize;
-    }
-
     pub fn get_resolution(&self) -> (u16, u16) {
-        (self.sd.width, self.sd.heigth)
+        self.sd.size()
     }
 
 	/// Dessine la matrix
