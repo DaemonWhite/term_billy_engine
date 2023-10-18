@@ -2,8 +2,12 @@
 /// Module de base du billy engine
 
 use crate::maths;
+
+use std::io::{self, Write, Stdout};
+#[doc(hidden)]
 extern crate crossterm;
-use crossterm::{terminal};
+#[doc(hidden)]
+use crossterm::{ ExecutableCommand, terminal, cursor};
 
 ///Gestion d'un tableau à deux dimesion
 #[derive(Clone, Copy, Debug)]
@@ -103,7 +107,7 @@ impl ScreenData {
     /// let width = sd.size().0
     /// ```
     pub fn size(&self) -> usize {
-        return usize::from( self.width * self.heigth);
+        return usize::from( self.width * (self.heigth - self.offset as u16));
     }
     /// Définie le offset celui-ci change l'auteur de l'écrans
     /// 'heigth - offset'
@@ -173,17 +177,29 @@ impl Triangle {
         self.max_position
     }
 }
+
 /// Base du moteur
 pub struct BillyEngine {
-    sd: ScreenData
+	stdout: Stdout,
+    sd: ScreenData,
+    pixel_buffer: Vec<Vec<char>>,
 }
 
 impl BillyEngine {
     pub fn new() -> BillyEngine {
+		let mut std = io::stdout();
+		std.execute(cursor::Hide);
         let mut sd = ScreenData::new();
         sd.set_offset(1);
+
+        let mut width: Vec<char> = Vec::new();
+        width.resize(sd.width as usize, ' ');
+        let mut pixel_buffer: Vec<Vec<char>> = Vec::new();
+        pixel_buffer.resize(sd.heigth as usize - sd.offset as usize, width);
         BillyEngine {
-            sd: ScreenData::new()
+        	stdout: std,
+            sd: sd,
+            pixel_buffer: pixel_buffer
         }
     }
 
@@ -194,12 +210,16 @@ impl BillyEngine {
     pub fn get_resolution(&self) -> (u16, u16) {
         (self.sd.width, self.sd.heigth)
     }
+
 	/// Dessine la matrix
-    pub fn draw(&mut self, pixel_buffer: &mut [char] ) {
-        self.sd.refresh();
-        for _e in 0..self.sd.size() {
-            print!("{}", pixel_buffer[_e]);
-        }
+    pub fn draw(&mut self) {
+    	self.stdout.execute(terminal::Clear(terminal::ClearType::All));
+    	for h in 0..self.pixel_buffer.len() {
+    		for w in 0..self.pixel_buffer[h].len() {
+    			print!("{}", self.pixel_buffer[h][w]);
+    		}
+    	}
+    	self.stdout.flush();
     }
 
 	/// Veriffie la position
@@ -211,33 +231,35 @@ impl BillyEngine {
         }
         return  verif;
     }
+
 	/// Place un pixel dans la matrix
-    pub fn put_pixel(&mut self, px: i16, py: i16, character: char, pixel_buffer: &mut [char]) {
-        self.sd.refresh();
+    pub fn put_pixel(&mut self, px: i16, py: i16, character: char) {
+		self.sd.refresh();
         if  self.verfif_position(px, self.sd.width as i16)
             && self.verfif_position(py, self.sd.heigth as i16){
-            pixel_buffer[usize::from(py as u16 * self.sd.width  + px as u16)] = character;
+            self.pixel_buffer[py as usize][px as usize] = character;
         }
     }
 
 	/// Place un texte
-    pub fn put_texte(&mut self, texte: &str, position: Point,pixel_buffer: &mut [char]) {
-        let mut offset: i16 = 0;
+    pub fn put_texte(&mut self, texte: &str, position: Point) {
+        const OFFSET: i16 = 1;
+        let mut position_x = position.get_x();
+
         for chararcter in texte.chars() {
-            if (position.get_x() + offset) >= 0 {
+            if position_x >= 0 && position_x <= self.sd.width as i16 {
                 self.put_pixel(
-                    position.get_x() + offset,
+                    position_x,
                     position.get_y(),
-					chararcter,
-                    pixel_buffer
+					chararcter
                 )
             }
-			offset += 1;
+			position_x += OFFSET;
         }
     }
 
 	/// Place un triangle
-    pub fn put_triangle(&mut self, triangle: &Triangle, pixel_buffer: &mut [char]) {
+    pub fn put_triangle(&mut self, triangle: &Triangle) {
         let ymin = isize::from(triangle.get_min().get_y());
         let ymax = isize::from(triangle.get_max().get_y());
         let xmin = isize::from(triangle.get_min().get_x());
@@ -254,20 +276,21 @@ impl BillyEngine {
                         let w2 = maths::eq_triangle(position, triangle.get_point(0), triangle.get_point(1));
                         let w3 = maths::eq_triangle(position, triangle.get_point(1), triangle.get_point(2));
                         if w1 >= 0 && w2 >= 0 && w3 >= 0 || -w1 >= 0 && -w2 >= 0 && -w3 >= 0  {
-                            self.put_pixel(x, y, '*', pixel_buffer)
+                            self.put_pixel(x, y, '*')
                         }
                     }
                 }
             }
 		}
     }
-
-	/// Remplace toute les valeurs de la Matrix
-    pub fn clear(&mut self, character: char, pixel_buffer: &mut [char]) {
-        for _e in 0..self.sd.size() {
-            pixel_buffer[_e] = character;
-        }
-    }
+    /// Remplace toute les valeurs de la Matrix
+	pub fn clear(&mut self, character: char) {
+		for h in 0..self.pixel_buffer.len() {
+    		for w in 0..self.pixel_buffer[h].len() {
+    			self.pixel_buffer[h][w] = character;
+    		}
+    	}
+	}
 }
 
 
