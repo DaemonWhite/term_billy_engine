@@ -102,7 +102,6 @@ impl ScreenData {
     /// // Ou pour récupérer une valeur
     /// let width = sd.size().0
     /// ```
-
     pub fn size(&self) -> usize {
         return usize::from( self.width * self.heigth);
     }
@@ -112,7 +111,7 @@ impl ScreenData {
         self.offset = offset;
     }
 }
-
+/// Permet de créer un triangle et de le modifier
 #[derive(Debug,Clone, Copy)]
 pub struct Triangle {
     position: [Point; 3],
@@ -121,6 +120,18 @@ pub struct Triangle {
 }
 
 impl Triangle {
+	/// Consturcteur à en paramètre
+	/// * 'p1' donne le premier point
+	/// * 'p2' oonne le deuxième point
+	/// * 'p3' donne le troisième point
+	///
+	/// ```rust
+	/// let t1 = Triangle::new(
+	///		Point::(1,0),
+	/// 	Point::(5,5),
+	///     Point::(5,10),
+	///	);
+
     pub fn new(p1:Point, p2:Point, p3:Point) -> Self {
         let min = maths::macro_min_point!(p1, p2, p3);
         let max = maths::macro_max_point!(p1, p2, p3);
@@ -130,11 +141,12 @@ impl Triangle {
             max_position: max
         }
     }
+    /// Permet de trouver les point les plus faible
     pub fn calculate_min_max_position(&mut self) {
     	self.min_poistion = maths::min_point( &self.position);
         self.max_position = maths::max_point( &self.position);
     }
-
+	/// Deplace tout le triangle
     pub fn translate(&mut self, x:i16,y: i16) {
         for i in 0..3 {
             self.position[i].move_x(x);
@@ -143,6 +155,7 @@ impl Triangle {
         self.calculate_min_max_position();
     }
 
+	/// Deplace un point du triangle
     pub fn translate_point(&mut self, index: usize, x: i16, y: i16) {
         self.position[index].move_x(x);
         self.position[index].move_y(y);
@@ -160,7 +173,7 @@ impl Triangle {
         self.max_position
     }
 }
-
+/// Base du moteur
 pub struct BillyEngine {
     sd: ScreenData
 }
@@ -181,7 +194,7 @@ impl BillyEngine {
     pub fn get_resolution(&self) -> (u16, u16) {
         (self.sd.width, self.sd.heigth)
     }
-
+	/// Dessine la matrix
     pub fn draw(&mut self, pixel_buffer: &mut [char] ) {
         self.sd.refresh();
         for _e in 0..self.sd.size() {
@@ -189,6 +202,7 @@ impl BillyEngine {
         }
     }
 
+	/// Veriffie la position
     pub fn verfif_position(&self, pixel: i16, max: i16) -> bool {
         let mut verif = false;
         const MIN: i16=0;
@@ -197,7 +211,7 @@ impl BillyEngine {
         }
         return  verif;
     }
-
+	/// Place un pixel dans la matrix
     pub fn put_pixel(&mut self, px: i16, py: i16, character: char, pixel_buffer: &mut [char]) {
         self.sd.refresh();
         if  self.verfif_position(px, self.sd.width as i16)
@@ -206,6 +220,7 @@ impl BillyEngine {
         }
     }
 
+	/// Place un texte
     pub fn put_texte(&mut self, texte: &str, position: Point,pixel_buffer: &mut [char]) {
         let mut offset: i16 = 0;
         for chararcter in texte.chars() {
@@ -221,6 +236,7 @@ impl BillyEngine {
         }
     }
 
+	/// Place un triangle
     pub fn put_triangle(&mut self, triangle: &Triangle, pixel_buffer: &mut [char]) {
         let ymin = isize::from(triangle.get_min().get_y());
         let ymax = isize::from(triangle.get_max().get_y());
@@ -246,6 +262,7 @@ impl BillyEngine {
 		}
     }
 
+	/// Remplace toute les valeurs de la Matrix
     pub fn clear(&mut self, character: char, pixel_buffer: &mut [char]) {
         for _e in 0..self.sd.size() {
             pixel_buffer[_e] = character;
