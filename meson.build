@@ -7,5 +7,5 @@ project('term_billy_engine', 'rust',
 
 
 
-subdir('src')
+subdir('main')
 
