@@ -1,7 +1,7 @@
 extern crate billy_engine;
 
-use billy_engine::maths::maths;
-use billy_engine::engine::engine::{Point, BillyEngine, Triangle};
+use billy_engine::maths;
+use billy_engine::engine::{Point, BillyEngine, Triangle};
 // use crate::libs::libs_math::maths;
 use std::{thread, time};
 
