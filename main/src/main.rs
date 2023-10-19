@@ -8,7 +8,7 @@ use std::{thread, time};
 
 
 fn main() {
-     maths::teste_macro();
+	maths::teste_macro();
     let seconde = time::Duration::from_millis(100);
     let _now = time::Instant::now();
 
