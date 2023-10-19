@@ -1,6 +1,8 @@
 
 /// Module de base du billy engine
 
+
+use crate::maths::{min, max};
 use crate::maths;
 
 use std::io::{self, Write, Stdout};
@@ -10,7 +12,7 @@ extern crate crossterm;
 use crossterm::{ ExecutableCommand, terminal, cursor};
 
 ///Gestion d'un tableau à deux dimesion
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Ord, Eq, PartialEq, PartialOrd, Debug)]
 pub struct Point {
 	x: i16,
 	y: i16
@@ -155,8 +157,8 @@ impl Triangle {
 	///	);
 
     pub fn new(p1:Point, p2:Point, p3:Point) -> Self {
-        let min = maths::macro_min_point!(p1, p2, p3);
-        let max = maths::macro_max_point!(p1, p2, p3);
+        let min = maths::min_point!(p1, p2, p3);
+        let max = maths::max_point!(p1, p2, p3);
         Triangle {
             position: [p1,p2,p3],
             min_poistion: min,
@@ -165,8 +167,8 @@ impl Triangle {
     }
     /// Permet de trouver les point les plus faible
     pub fn calculate_min_max_position(&mut self) {
-    	self.min_poistion = maths::min_point( &self.position);
-        self.max_position = maths::max_point( &self.position);
+    	self.min_poistion = maths::min_point!(self.position[0], self.position[1], self.position[2]);
+        self.max_position = maths::max_point!(self.position[0], self.position[1], self.position[2]);
     }
 	/// Deplace tout le triangle
     pub fn translate(&mut self, x:i16,y: i16) {
@@ -206,7 +208,7 @@ pub struct BillyEngine {
 impl BillyEngine {
     pub fn new() -> BillyEngine {
 		let mut std = io::stdout();
-		std.execute(cursor::Hide);
+		let _ = std.execute(cursor::Hide);
         let mut sd = ScreenData::new();
         sd.set_offset(1);
 
@@ -227,13 +229,14 @@ impl BillyEngine {
 
 	/// Dessine la matrix
     pub fn draw(&mut self) {
-    	self.stdout.execute(terminal::Clear(terminal::ClearType::All));
+    	let _ = self.stdout.execute(terminal::Clear(terminal::ClearType::All));
     	for h in 0..self.pixel_buffer.len() {
     		for w in 0..self.pixel_buffer[h].len() {
     			print!("{}", self.pixel_buffer[h][w]);
     		}
+    		print!("\n")
     	}
-    	self.stdout.flush();
+    	let _ = self.stdout.flush();
     }
 
 	/// Veriffie la position
@@ -306,7 +309,3 @@ impl BillyEngine {
     	}
 	}
 }
-
-
-
-
