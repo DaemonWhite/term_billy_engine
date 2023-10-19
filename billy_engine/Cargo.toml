@@ -12,3 +12,4 @@ path = "src/lib.rs"
 
 [dependencies]
 crossterm = "0.27"
+min-max = "0.1.8"
