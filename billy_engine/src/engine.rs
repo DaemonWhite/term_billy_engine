@@ -1,7 +1,7 @@
 
 /// Module de base du billy engine
 
-
+use crate::ui::FormeGraphique;
 use crate::maths::{min, max};
 use crate::maths;
 
@@ -256,6 +256,21 @@ impl BillyEngine {
             && self.verfif_position(py, self.sd.heigth as i16){
             self.pixel_buffer[py as usize][px as usize] = character;
         }
+    }
+
+    pub fn put_object(&mut self, object: impl FormeGraphique) {
+    	let position = object.get_position();
+    	let size = object.get_size();
+    	let image = object.get_pixel();
+    	for h in 0..size[1] {
+    		for w in 0..size[0] {
+    			self.put_pixel(
+    				position.get_x() + h as i16,
+    				position.get_y() + w as i16,
+    				image[h as usize][w as usize]
+    			)
+    		}
+    	}
     }
 
 	/// Place un texte
