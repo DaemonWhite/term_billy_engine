@@ -87,28 +87,32 @@ impl Boxe {
 				self.image[1][w] = self.title.chars().nth(w-2).unwrap();
 			}
 		}
+		self.draw_border_line(2);
+	}
+
+	fn draw_border_line(&mut self, heigth: usize) {
+		const DEFAULT_CHAR: char = '=';
+		for _i in 0..(self.size[0] as usize -1) {
+			self.image[heigth][_i] = DEFAULT_CHAR;
+		}
+	}
+
+	fn draw_border_column(&mut self, width: usize) {
+		const DEFAULT_CHAR: char = '=';
+		for _i in 0..self.size[1] as usize {
+			self.image[_i][width] = DEFAULT_CHAR;
+		}
 	}
 
 	fn calcuate_border(&mut self) {
-		const DEFAULT_CHAR: char = '=';
-		let width = self.size[0] as usize-1;
-		let heigth = self.size[1] as usize-1;
 		//top line
-		for _i in 0..width {
-			self.image[0][_i] = DEFAULT_CHAR;
-		}
+		self.draw_border_line(0);
 		//left line
-		for _i in 0..heigth {
-			self.image[_i][0] = DEFAULT_CHAR;
-		}
+		self.draw_border_column(0);
 		//rigth line
-		for _i in 0..heigth {
-			self.image[_i][width] = DEFAULT_CHAR;
-		}
-		// Bottom Line
-		for _i in 0..(width+1) {
-			self.image[heigth][_i] = DEFAULT_CHAR;
-		}
+		self.draw_border_column(self.size[0] as usize -1);
+		//botom Line
+		self.draw_border_line(self.size[1] as usize -1)
 	}
 	pub fn calculate(&mut self) {
 		let mut w: Vec<char> = Vec::new();
