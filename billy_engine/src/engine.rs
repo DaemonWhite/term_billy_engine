@@ -265,8 +265,8 @@ impl BillyEngine {
     	for h in 0..size[1] {
     		for w in 0..size[0] {
     			self.put_pixel(
-    				position.get_x() + h as i16,
-    				position.get_y() + w as i16,
+    				position.get_x() + w as i16,
+    				position.get_y() + h as i16,
     				image[h as usize][w as usize]
     			)
     		}
