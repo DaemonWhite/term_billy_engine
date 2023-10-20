@@ -7,6 +7,7 @@ fn error_callback() {
 }
 
 pub trait FormeGraphique {
+	fn set_title(&mut self, title: String);
 	fn set_size(&mut self, width: u16, heigth: u16);
 	fn set_position(&mut self, p: Point);
 	fn get_position(&self) -> Point;
@@ -52,11 +53,12 @@ impl Element {
 pub struct Boxe {
 	size: [u16; 2],
 	position: Point,
+	title: String,
 	image: Vec<Vec<char>>,
 }
 
 impl Boxe {
-	pub fn new() -> Self {
+	pub fn new(title: String) -> Self {
 		let size: [u16; 2] = [10, 10];
 		let mut w: Vec<char> = Vec::new();
 		w.resize(size[0] as usize, ' ');
@@ -65,14 +67,32 @@ impl Boxe {
 		Boxe {
 			size: size,
 			position: Point::new(1,1),
+			title,
 			image: h,
 		}
 	}
+	fn write_title(&mut self) {
+		let width = self.size[0] as usize-2;
+		let heigth = self.size[1] as usize;
+		let title_len = {
+			if self.title.len() > width {
+				width
+			} else {
+				self.title.len()+2
+			}
+		};
+
+		if heigth >= 3 && width > 4{
+			for w in 2..title_len {
+				self.image[1][w] = self.title.chars().nth(w-2).unwrap();
+			}
+		}
+	}
+
 	fn calcuate_border(&mut self) {
 		const DEFAULT_CHAR: char = '=';
 		let width = self.size[0] as usize-1;
 		let heigth = self.size[1] as usize-1;
-		println!("{}x{} = {}x{}", width, heigth, self.image[0].len(), self.image.len());
 		//top line
 		for _i in 0..width {
 			self.image[0][_i] = DEFAULT_CHAR;
@@ -93,14 +113,20 @@ impl Boxe {
 	pub fn calculate(&mut self) {
 		let mut w: Vec<char> = Vec::new();
 		self.image.clear();
+		// Width Table
 		w.resize(self.size[0] as usize, ' ');
-		println!("{}", w.len());
+		// Heigth table
 		self.image.resize(self.size[1] as usize, w);
+		self.write_title();
 		self.calcuate_border();
 	}
 }
 
 impl FormeGraphique for Boxe {
+	fn set_title(&mut self, title: String) {
+		self.title = title;
+		self.write_title();
+	}
 	fn set_size(&mut self, width: u16, heigth: u16) {
 		self.size = [width, heigth];
 		self.calculate();
@@ -129,7 +155,7 @@ pub struct BoxeElement {
 impl BoxeElement {
 	pub fn new() -> Self {
 		BoxeElement {
-			boxe: Boxe::new(),
+			boxe: Boxe::new("".to_string()),
 			elements: Vec::new(),
 			selector: 0
 		}
@@ -137,6 +163,9 @@ impl BoxeElement {
 }
 
 impl FormeGraphique for BoxeElement {
+	fn set_title(&mut self, title: String) {
+		self.boxe.set_title(title);
+	}
 	fn set_size(&mut self, width: u16, heigth: u16) {
 		self.boxe.set_size(width, heigth);
 	}
