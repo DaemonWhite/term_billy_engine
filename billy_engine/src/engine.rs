@@ -261,7 +261,7 @@ impl BillyEngine {
     pub fn put_object(&mut self, object: impl FormeGraphique) {
     	let position = object.get_position();
     	let size = object.get_size();
-    	let image = object.get_pixel();
+    	let image = object.get_image();
     	for h in 0..size[1] {
     		for w in 0..size[0] {
     			self.put_pixel(
