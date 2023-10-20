@@ -12,7 +12,7 @@ pub trait FormeGraphique {
 	fn set_position(&mut self, p: Point);
 	fn get_position(&self) -> Point;
 	fn get_size(&self) -> [u16; 2];
-	fn get_pixel(&self) -> Vec<Vec<char>>;
+	fn get_image(&self) -> &Vec<Vec<char>>;
 }
 
 #[derive(Clone)]
@@ -144,8 +144,8 @@ impl FormeGraphique for Boxe {
 	fn get_position(&self) -> Point {
 		self.position
 	}
-	fn get_pixel(&self) -> Vec<Vec<char>> {
-		self.image.clone()
+	fn get_image(&self) ->  &Vec<Vec<char>> {
+		&self.image
 	}
 }
 
@@ -182,7 +182,7 @@ impl FormeGraphique for BoxeElement {
 	fn get_position(&self) -> Point {
 		self.boxe.get_position()
 	}
-	fn get_pixel(&self) -> Vec<Vec<char>> {
-		self.boxe.image.clone()
+	fn get_image(&self) ->  &Vec<Vec<char>> {
+		&self.boxe.image
 	}
 }
