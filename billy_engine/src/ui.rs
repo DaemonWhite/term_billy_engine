@@ -1,5 +1,4 @@
 use crate::engine::Point;
-
 type Callback = fn();
 
 fn error_callback() {
@@ -38,6 +37,22 @@ impl Element {
 	pub fn set_action(&mut self, c: Callback) {
 		self.action = c;
 	}
+	pub fn set_select(&mut self, select: bool) {
+		if !self.is_select && select {
+			self.title.insert(0, '*');
+			self.title.insert(1, ' ');
+			println!("add");
+		} else if self.is_select && !select {
+			self.title.remove(0);
+			self.title.remove(0);
+			println!("remove");
+		 }
+		 self.is_select = select;
+		 println!("{}", self.title);
+	}
+	pub fn get_name(&self) -> &String {
+		&self.title
+	}
 	pub fn get_id(&self) -> u16 {
 		self.id
 	}
@@ -71,20 +86,58 @@ impl Boxe {
 			image: h,
 		}
 	}
-	fn write_title(&mut self) {
+
+	pub fn write_text(&mut self, position: usize, back_to_line: bool, text: &String) {
+		let width = self.size[0] as usize-2;
+		let heigth = self.size[1] as usize -3;
+		let h_pos = position +3;
+
+		println!("Une demande");
+
+		let text_len: usize = {
+			if text.len() > width && !back_to_line {
+				width
+			} else {
+				text.len()-1
+			}
+		};
+
+		let h_len: usize = {
+			if back_to_line {
+				let e: usize = (text_len as f32 / width as f32).ceil() as usize;
+				e+1
+			} else {
+				1 as usize
+			}
+		};
+
+		let mut cursor = 0;
+		for h in 0..h_len {
+			for w in 2..width  {
+				self.image[h+h_pos][w] = text.chars().nth(cursor).unwrap();
+				if cursor >= text_len {
+					break;
+				}
+				cursor += 1;
+			}
+		}
+
+	}
+
+	fn write_title(&mut self, position: usize) {
 		let width = self.size[0] as usize-2;
 		let heigth = self.size[1] as usize;
 		let title_len = {
 			if self.title.len() > width {
 				width
 			} else {
-				self.title.len()+2
+				self.title.len()+1
 			}
 		};
 
 		if heigth >= 3 && width > 4{
 			for w in 2..title_len {
-				self.image[1][w] = self.title.chars().nth(w-2).unwrap();
+				self.image[position][w] = self.title.chars().nth(w-2).unwrap();
 			}
 		}
 		self.draw_border_line(2);
@@ -121,7 +174,8 @@ impl Boxe {
 		w.resize(self.size[0] as usize, ' ');
 		// Heigth table
 		self.image.resize(self.size[1] as usize, w);
-		self.write_title();
+
+		self.write_title(1);
 		self.calcuate_border();
 	}
 }
@@ -129,7 +183,7 @@ impl Boxe {
 impl FormeGraphique for Boxe {
 	fn set_title(&mut self, title: String) {
 		self.title = title;
-		self.write_title();
+		self.write_title(0);
 	}
 	fn set_size(&mut self, width: u16, heigth: u16) {
 		self.size = [width, heigth];
@@ -153,16 +207,78 @@ impl FormeGraphique for Boxe {
 pub struct BoxeElement {
 	boxe: Boxe,
 	elements: Vec<Element>,
-	selector: u16,
+	selector: usize,
+	multi_select: bool,
+	nb_element: usize
 }
 
 impl BoxeElement {
-	pub fn new() -> Self {
+	pub fn new(title: String) -> Self {
 		BoxeElement {
-			boxe: Boxe::new("".to_string()),
+			boxe: Boxe::new(title),
 			elements: Vec::new(),
-			selector: 0
+			selector: 0,
+			multi_select: false,
+			nb_element: 0
 		}
+	}
+	fn render_option(&mut self) {
+		for _e in 0..self.nb_element {
+			self.boxe.write_text(_e, false, &self.elements[_e].get_name());
+		}
+	}
+	pub fn calculate(&mut self) {
+		self.boxe.calculate();
+		self.render_option();
+	}
+	pub fn unselect_all(&mut self) {
+		for i in 0..self.nb_element {
+			self.elements[i].set_select(false);
+		}
+		self.calculate();
+	}
+	pub fn select_olny(&mut self, index: usize) {
+		self.unselect_all();
+		self.elements[index].set_select(true);
+		self.calculate();
+	}
+
+	pub fn select_all(&mut self) {
+		for i in 0..self.nb_element {
+			self.elements[i].set_select(true);
+		}
+		self.calculate();
+	}
+
+	pub fn select_elements(&mut self, index: usize) {
+		if !self.multi_select {
+			self.unselect_all();
+		}
+		self.elements[index].set_select(true);
+		self.selector = index ;
+		self.calculate();
+	}
+
+	pub fn unselect_element(&mut self, index: usize) {
+		if !self.multi_select {
+			self.unselect_all();
+		}
+		self.elements[index].set_select(false);
+		self.selector = index ;
+		self.calculate();
+	}
+
+	pub fn action(&self) {
+		self.elements[self.selector].action();
+	}
+	pub fn add_element(&mut self, name: String) {
+		let el = Element::new(self.nb_element as u16, name);
+		self.elements.push(el);
+		self.nb_element +=1;
+		self.render_option();
+	}
+	pub fn set_callback_by_ellement(&mut self, index: usize, c: Callback) {
+		self.elements[index].set_action(c);
 	}
 }
 
