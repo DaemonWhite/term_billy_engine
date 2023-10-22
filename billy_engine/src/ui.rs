@@ -1,4 +1,5 @@
 use crate::engine::Point;
+use crate::{DEFAULT_CHAR,DEFAULT_CHAR_SELECT, DEFAULT_CHAR_BORDER};
 type Callback = fn();
 
 fn error_callback() {
@@ -39,16 +40,13 @@ impl Element {
 	}
 	pub fn set_select(&mut self, select: bool) {
 		if !self.is_select && select {
-			self.title.insert(0, '*');
-			self.title.insert(1, ' ');
-			println!("add");
+			self.title.insert(0, DEFAULT_CHAR);
+			self.title.insert(1, DEFAULT_CHAR_SELECT);
 		} else if self.is_select && !select {
 			self.title.remove(0);
 			self.title.remove(0);
-			println!("remove");
 		 }
 		 self.is_select = select;
-		 println!("{}", self.title);
 	}
 	pub fn get_name(&self) -> &String {
 		&self.title
@@ -76,7 +74,7 @@ impl Boxe {
 	pub fn new(title: String) -> Self {
 		let size: [u16; 2] = [10, 10];
 		let mut w: Vec<char> = Vec::new();
-		w.resize(size[0] as usize, ' ');
+		w.resize(size[0] as usize, DEFAULT_CHAR);
 		let mut h: Vec<Vec<char>> = Vec::new();
 		h.resize(size[0] as usize, w);
 		Boxe {
@@ -91,8 +89,6 @@ impl Boxe {
 		let width = self.size[0] as usize-2;
 		let heigth = self.size[1] as usize -3;
 		let h_pos = position +3;
-
-		println!("Une demande");
 
 		let text_len: usize = {
 			if text.len() > width && !back_to_line {
@@ -144,14 +140,14 @@ impl Boxe {
 	}
 
 	fn draw_border_line(&mut self, heigth: usize) {
-		const DEFAULT_CHAR: char = '=';
+		const DEFAULT_CHAR: char = DEFAULT_CHAR_BORDER;
 		for _i in 0..(self.size[0] as usize -1) {
 			self.image[heigth][_i] = DEFAULT_CHAR;
 		}
 	}
 
 	fn draw_border_column(&mut self, width: usize) {
-		const DEFAULT_CHAR: char = '=';
+		const DEFAULT_CHAR: char = DEFAULT_CHAR_BORDER;
 		for _i in 0..self.size[1] as usize {
 			self.image[_i][width] = DEFAULT_CHAR;
 		}
@@ -171,7 +167,7 @@ impl Boxe {
 		let mut w: Vec<char> = Vec::new();
 		self.image.clear();
 		// Width Table
-		w.resize(self.size[0] as usize, ' ');
+		w.resize(self.size[0] as usize, DEFAULT_CHAR);
 		// Heigth table
 		self.image.resize(self.size[1] as usize, w);
 

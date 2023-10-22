@@ -6,7 +6,6 @@ fn main() {
 	let mut engine = BillyEngine::new();
 	let mut bijour = Boxe::new("Bonjour".to_string());
 	let mut coucou: String = "Tu sais que les billy son les meilleure ?".to_string();
-	println!("{}", coucou.len());
 	let mut choice_demo = BoxeElement::new("Choisie".to_string());
 	choice_demo.set_title("choisie ta démo".to_string());
 	choice_demo.set_position(Point::new(21, 1));

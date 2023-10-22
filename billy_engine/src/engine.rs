@@ -1,6 +1,7 @@
 
 /// Module de base du billy engine
 
+use crate::DEFAULT_CHAR;
 use crate::ui::FormeGraphique;
 use crate::maths::{min, max};
 use crate::maths;
@@ -213,7 +214,7 @@ impl BillyEngine {
         sd.set_offset(1);
 
         let mut width: Vec<char> = Vec::new();
-        width.resize(sd.width as usize, ' ');
+        width.resize(sd.width as usize, DEFAULT_CHAR);
         let mut pixel_buffer: Vec<Vec<char>> = Vec::new();
         pixel_buffer.resize(sd.heigth as usize - sd.offset as usize, width);
         BillyEngine {
