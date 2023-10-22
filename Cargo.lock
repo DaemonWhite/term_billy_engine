@@ -13,6 +13,7 @@ name = "billy_engine"
 version = "0.1.0"
 dependencies = [
  "crossterm",
+ "lazy_static",
  "min-max",
 ]
 
@@ -58,6 +59,12 @@ checksum = "acdd7c62a3665c7f6830a51635d9ac9b23ed385797f70a83bb8bafe9c572ab2b"
 dependencies = [
  "winapi",
 ]
+
+[[package]]
+name = "lazy_static"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"

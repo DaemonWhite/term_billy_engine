@@ -13,3 +13,4 @@ path = "src/lib.rs"
 [dependencies]
 crossterm = "0.27"
 min-max = "0.1.8"
+lazy_static = "1.4.0"
