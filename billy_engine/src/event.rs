@@ -1,7 +1,6 @@
-type Callback = fn();
-
-use std::sync::Mutex;
+use std::sync::{Mutex, Arc};
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 
 lazy_static! {
 	static ref LE: Mutex<ListEvent> = Mutex::new(
@@ -9,102 +8,62 @@ lazy_static! {
 	);
 }
 
-#[derive(Debug)]
-struct Event {
-	name: String,
-	subscribed: Vec<Callback>
-}
+type Event = String;
 
-impl Event {
-	pub fn new(name: String) -> Self {
-		let v: Vec<Callback> = Vec::new();
-		Event {
-			name: name,
-			subscribed: v
-		}
-	}
-	pub fn get_name(&self) -> &String {
-		&self.name
-	}
-	pub fn set_callback(&mut self, c: Callback) {
-		self.subscribed.push(c);
-	}
-	pub fn call(&self) {
-		for _e in 0..self.subscribed.len() {
-			self.subscribed[_e]();
-		}
-	}
-}
-
-
-#[derive(Default, Debug)]
-struct ListEvent {
-	nb: usize,
-	list_event: Vec<Event>
+pub struct ListEvent {
+    subscriptions: Arc<Mutex<HashMap<Event, Vec<Box<dyn Fn() + Send>>>>>,
 }
 
 impl ListEvent {
-	pub fn new () -> Self {
-		let v: Vec<Event> = Vec::new();
-	    ListEvent {
-	    	nb: 0,
-	    	list_event: v
-	    }
-	}
-	pub fn add_event(&mut self, name: String) {
-		let event = Event::new(name);
-		self.nb += 1;
-		self.list_event.push(event);
-	}
+    pub fn new() -> Self {
+        ListEvent {
+            subscriptions: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
 
-	fn index_event_by_name(&self, name: String) -> isize {
-		let mut index: isize = -1;
-		for _i in 0..self.nb {
-			if self.list_event[_i].get_name() == &name {
-				index = _i as isize;
-				break;
-			}
-		}
-		return index;
-	}
+    pub fn subscribe<F>(&self, event: &str, callback: F)
+    where
+        F: Fn() + Send + 'static,
+    {
+        let mut subscriptions = self.subscriptions.lock().unwrap();
+        if let Some(add_call) = subscriptions.get_mut(event){
+			add_call.push(Box::new(callback));
+        } else {
+            let v: Vec<Box<dyn Fn() + Send>> = vec![Box::new(callback)];
+            subscriptions
+            	.entry(event.to_string())
+            	.or_insert(v);
+        }
+    }
 
-	pub fn subscribe(&mut self, name: String, c: Callback) {
-		let index = self.index_event_by_name(name);
-		if index != -1 {
-			self.list_event[index as usize].set_callback(c);
-		} else {
-			eprint!("index inconue");
-		}
-	}
-
-	pub fn call(&self, name: String) {
-		let index = self.index_event_by_name(name);
-		if index != -1 {
-			self.list_event[index as usize].call();
-		} else {
-			eprint!("index inconue");
-		}
-	}
+    pub fn publish(&self, event: &str) {
+        let subscriptions = self.subscriptions.lock().unwrap();
+        if let Some(callbacks) = subscriptions.get(event) {
+            println!("o");
+			for callback in callbacks.iter() {
+                callback();
+            }
+        }
+    }
+}
+pub trait Subscritable {
+	fn subscribe<T>(t: T);
 }
 
-pub fn add_event(name: String) {
-	let mut le = LE.lock().unwrap();
-	le.add_event(name);
+pub trait SubsribedObject: Send {
+	fn subscribed(&self);
+	fn event(&self);
 }
 
-pub fn subscribed_event(name: String, c: Callback) {
-	let mut le = LE.lock().unwrap();
+pub fn subscribe<F>(name: &str, c: F)
+	where
+		F: Fn() + Send + 'static,
+	{
+	let le = LE.lock().unwrap();
 	le.subscribe(name, c);
 }
 
-pub fn call(name: String) {
+pub fn publish(name: &str) {
 	let le = LE.lock().unwrap();
-	le.call(name);
+	le.publish(name);
 }
-
-pub fn list_events() {
-	let le = LE.lock().unwrap();
-	println!("{:?}", le)
-}
-
-// static mut list_event: ListEvent = ListEvent::new();

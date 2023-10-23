@@ -5,6 +5,8 @@ use crate::DEFAULT_CHAR;
 use crate::ui::FormeGraphique;
 use crate::maths::{min, max};
 use crate::maths;
+use crate::event::*;
+use std::sync::{Arc, Mutex};
 
 use std::io::{self, Write, Stdout};
 #[doc(hidden)]
@@ -71,6 +73,7 @@ impl Point {
     }
 }
 /// Contient les informations de la fenètre
+#[derive(Debug,Clone)]
 pub struct ScreenData {
 	/// Largeur de l'écrans
     width: u16,
@@ -109,6 +112,10 @@ impl ScreenData {
         let (terminal_width, terminal_heigth) = terminal::size().unwrap();
         self.width = terminal_width;
         self.heigth = terminal_heigth- self.offset as u16;
+    }
+
+    pub fn subscribed_event() {
+
     }
 
     /// Retourne la taille de l'écrans
@@ -200,11 +207,13 @@ impl Triangle {
 }
 
 /// Base du moteur
+#[derive(Debug)]
 pub struct BillyEngine {
 	stdout: Stdout,
     sd: ScreenData,
     pixel_buffer: Vec<Vec<char>>,
 }
+
 
 impl BillyEngine {
     pub fn new() -> BillyEngine {
@@ -212,16 +221,25 @@ impl BillyEngine {
 		let _ = std.execute(cursor::Hide);
         let mut sd = ScreenData::new();
         sd.set_offset(1);
-
         let mut width: Vec<char> = Vec::new();
         width.resize(sd.width as usize, DEFAULT_CHAR);
         let mut pixel_buffer: Vec<Vec<char>> = Vec::new();
         pixel_buffer.resize(sd.heigth as usize - sd.offset as usize, width);
-        BillyEngine {
+        //event::add_event("RESIZE".to_string());
+        let a = BillyEngine {
         	stdout: std,
             sd: sd,
             pixel_buffer: pixel_buffer
-        }
+        };
+        //let e =  &a.auto_resize;
+        //println!("{:#?}", e);
+        //a.get_resolution();
+		//event::teste("RESIZE".to_string(), Box::new(|| a.auto_resize()) );
+        a
+    }
+
+    pub fn auto_resize(&self) {
+    	println!("auto resize {:?}", self.pixel_buffer);
     }
 
     pub fn get_resolution(&self) -> (u16, u16) {
@@ -324,4 +342,16 @@ impl BillyEngine {
     		}
     	}
 	}
+}
+
+pub fn create_default_engine() -> Arc<Mutex<BillyEngine>> {
+	let engine = Arc::new(Mutex::new(BillyEngine::new()));
+	subscribe("RESIZE", {
+		let engine = Arc::clone(&engine);
+		move || {
+			let engine = engine.lock().unwrap();
+			engine.auto_resize();
+		}
+	});
+	engine
 }
