@@ -100,8 +100,12 @@ impl Boxe {
 
 		let h_len: usize = {
 			if back_to_line {
-				let e: usize = (text_len as f32 / width as f32).ceil() as usize;
-				e+1
+				let mut e: usize = (text_len as f32 / width as f32).ceil() as usize;
+				e+=1;
+				if e > height {
+					e =height;
+				}
+				e
 			} else {
 				1 as usize
 			}
