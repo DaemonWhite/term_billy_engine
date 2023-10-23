@@ -8,7 +8,7 @@ fn error_callback() {
 
 pub trait FormeGraphique {
 	fn set_title(&mut self, title: String);
-	fn set_size(&mut self, width: u16, heigth: u16);
+	fn set_size(&mut self, width: u16, height: u16);
 	fn set_position(&mut self, p: Point);
 	fn get_position(&self) -> Point;
 	fn get_size(&self) -> [u16; 2];
@@ -87,7 +87,7 @@ impl Boxe {
 
 	pub fn write_text(&mut self, position: usize, back_to_line: bool, text: &String) {
 		let width = self.size[0] as usize-2;
-		let heigth = self.size[1] as usize -3;
+		let height = self.size[1] as usize -3;
 		let h_pos = position +3;
 
 		let text_len: usize = {
@@ -122,7 +122,7 @@ impl Boxe {
 
 	fn write_title(&mut self, position: usize) {
 		let width = self.size[0] as usize-2;
-		let heigth = self.size[1] as usize;
+		let height = self.size[1] as usize;
 		let title_len = {
 			if self.title.len() > width {
 				width
@@ -131,7 +131,7 @@ impl Boxe {
 			}
 		};
 
-		if heigth >= 3 && width > 4{
+		if height >= 3 && width > 4{
 			for w in 2..title_len {
 				self.image[position][w] = self.title.chars().nth(w-2).unwrap();
 			}
@@ -139,10 +139,10 @@ impl Boxe {
 		self.draw_border_line(2);
 	}
 
-	fn draw_border_line(&mut self, heigth: usize) {
+	fn draw_border_line(&mut self, height: usize) {
 		const DEFAULT_CHAR: char = DEFAULT_CHAR_BORDER;
 		for _i in 0..(self.size[0] as usize -1) {
-			self.image[heigth][_i] = DEFAULT_CHAR;
+			self.image[height][_i] = DEFAULT_CHAR;
 		}
 	}
 
@@ -181,8 +181,8 @@ impl FormeGraphique for Boxe {
 		self.title = title;
 		self.write_title(0);
 	}
-	fn set_size(&mut self, width: u16, heigth: u16) {
-		self.size = [width, heigth];
+	fn set_size(&mut self, width: u16, height: u16) {
+		self.size = [width, height];
 		self.calculate();
 	}
 	fn set_position(&mut self, p: Point) {
@@ -282,8 +282,8 @@ impl FormeGraphique for BoxeElement {
 	fn set_title(&mut self, title: String) {
 		self.boxe.set_title(title);
 	}
-	fn set_size(&mut self, width: u16, heigth: u16) {
-		self.boxe.set_size(width, heigth);
+	fn set_size(&mut self, width: u16, height: u16) {
+		self.boxe.set_size(width, height);
 	}
 	fn set_position(&mut self, p: Point) {
 		self.boxe.set_position(p);

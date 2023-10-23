@@ -9,7 +9,7 @@ lazy_static! {
 }
 
 type Event = String;
-
+/// Gestionaire d'évènement de l'application
 pub struct ListEvent {
     subscriptions: Arc<Mutex<HashMap<Event, Vec<Box<dyn Fn() + Send>>>>>,
 }
@@ -46,15 +46,8 @@ impl ListEvent {
         }
     }
 }
-pub trait Subscritable {
-	fn subscribe<T>(t: T);
-}
 
-pub trait SubsribedObject: Send {
-	fn subscribed(&self);
-	fn event(&self);
-}
-
+///
 pub fn subscribe<F>(name: &str, c: F)
 	where
 		F: Fn() + Send + 'static,

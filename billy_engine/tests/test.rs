@@ -22,7 +22,7 @@ mod teste_billy_engine {
 		let h = h - OFFSET as u16;
 		sd.set_offset(OFFSET);
 		assert_eq!(OFFSET, sd.get_offset());
-		assert_eq!(h, sd.get_heigth());
+		assert_eq!(h, sd.get_height());
 	}
 
 	#[test]
