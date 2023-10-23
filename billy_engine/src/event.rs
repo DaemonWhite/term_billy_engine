@@ -21,6 +21,9 @@ impl ListEvent {
         }
     }
 
+	/// Permet de ce souscrire à un évènement et le crée si non existant
+	/// 'event' Nom de l'évènement
+	/// 'callback' méthode à lier à l'évènement
     pub fn subscribe<F>(&self, event: &str, callback: F)
     where
         F: Fn() + Send + 'static,
@@ -36,6 +39,8 @@ impl ListEvent {
         }
     }
 
+	///Appelle un évènement
+	/// 'event' &str nom de l'evencement
     pub fn publish(&self, event: &str) {
         let subscriptions = self.subscriptions.lock().unwrap();
         if let Some(callbacks) = subscriptions.get(event) {
@@ -47,7 +52,7 @@ impl ListEvent {
     }
 }
 
-///
+/// Permet de ce souscrit au gestionaire d'evènements Global
 pub fn subscribe<F>(name: &str, c: F)
 	where
 		F: Fn() + Send + 'static,
@@ -56,6 +61,7 @@ pub fn subscribe<F>(name: &str, c: F)
 	le.subscribe(name, c);
 }
 
+/// Appelle un évènement
 pub fn publish(name: &str) {
 	let le = LE.lock().unwrap();
 	le.publish(name);
