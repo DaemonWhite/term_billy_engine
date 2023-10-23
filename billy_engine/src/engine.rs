@@ -78,7 +78,7 @@ pub struct ScreenData {
 	/// Largeur de l'écrans
     width: u16,
     /// Hauteur de l'écrans
-    heigth: u16,
+    height: u16,
     /// Decalage de la hauteur peut êtres utiles dans certain terminale
     offset: u8
 }
@@ -86,17 +86,17 @@ pub struct ScreenData {
 impl ScreenData {
     pub fn new() -> ScreenData {
         let offset: u8= 0;
-		let (terminal_width, mut terminal_heigth) = terminal::size().unwrap();
-        terminal_heigth -= offset as u16;
+		let (terminal_width, mut terminal_height) = terminal::size().unwrap();
+        terminal_height -= offset as u16;
         ScreenData {
             width: terminal_width,
-            heigth: terminal_heigth,
+            height: terminal_height,
             offset: offset
         }
     }
 
-    pub fn get_heigth(&self) -> u16 {
-    	self.heigth - self.offset as u16
+    pub fn get_height(&self) -> u16 {
+    	self.height - self.offset as u16
     }
 
     pub fn get_width(&self) -> u16 {
@@ -109,9 +109,9 @@ impl ScreenData {
 
     ///Permet de recalculer la taille de la fenètre
     pub fn refresh(&mut self) {
-        let (terminal_width, terminal_heigth) = terminal::size().unwrap();
+        let (terminal_width, terminal_height) = terminal::size().unwrap();
         self.width = terminal_width;
-        self.heigth = terminal_heigth- self.offset as u16;
+        self.height = terminal_height- self.offset as u16;
     }
 
     pub fn subscribed_event() {
@@ -121,22 +121,22 @@ impl ScreenData {
     /// Retourne la taille de l'écrans
     ///
     /// # Return
-    /// rend 'width' puis 'heigth'
+    /// rend 'width' puis 'height'
     ///
     /// # Example
     /// ```rust
     /// use billy_engine::engine::ScreenData;
     ///
     /// let mut sd = ScreenData::new();
-    /// let (width, heigth) = sd.size();
+    /// let (width, height) = sd.size();
     /// // Ou pour récupérer une valeur
     /// let width = sd.size().0;
     /// ```
     pub fn size(&self) -> (u16, u16) {
-        return (self.width, self.heigth - self.offset as u16);
+        return (self.width, self.height - self.offset as u16);
     }
     /// Définie le offset celui-ci change l'auteur de l'écrans
-    /// 'heigth - offset'
+    /// 'height - offset'
     pub fn set_offset(&mut self, offset: u8) {
         self.offset = offset;
     }
@@ -214,7 +214,33 @@ pub struct BillyEngine {
     pixel_buffer: Vec<Vec<char>>,
 }
 
-
+/// Moteur graphique du jeux
+/// Le moteur dépend des événements pour fonctionner
+/// L'une des méthode pour ajouter a l'évènement et de le mettre
+/// dans le arc.
+///
+/// Si il n'y a pas les évènement de base comme "RESIZE"
+/// certaine fonctionalitée du moteur sera couper.
+///
+/// Pour éviter les problèmes il est préfèrable d'utiliser
+/// "create_default_engine"
+///
+/// ```rust
+/// use std::sync::{Arc, Mutex};
+/// use billy_engine::{
+/// 	engine::BillyEngine,
+/// 	event::subscribe
+/// };
+///
+/// let engine = Arc::new(Mutex::new(BillyEngine::new()));
+///	subscribe("RESIZE", {
+///		let engine = Arc::clone(&engine);
+///		move || {
+///			let engine = engine.lock().unwrap();
+///			engine.auto_resize();
+///		}
+///	});
+/// ```
 impl BillyEngine {
     pub fn new() -> BillyEngine {
 		let mut std = io::stdout();
@@ -224,20 +250,18 @@ impl BillyEngine {
         let mut width: Vec<char> = Vec::new();
         width.resize(sd.width as usize, DEFAULT_CHAR);
         let mut pixel_buffer: Vec<Vec<char>> = Vec::new();
-        pixel_buffer.resize(sd.heigth as usize - sd.offset as usize, width);
+        pixel_buffer.resize(sd.height as usize - sd.offset as usize, width);
         //event::add_event("RESIZE".to_string());
         let a = BillyEngine {
         	stdout: std,
             sd: sd,
             pixel_buffer: pixel_buffer
         };
-        //let e =  &a.auto_resize;
-        //println!("{:#?}", e);
-        //a.get_resolution();
-		//event::teste("RESIZE".to_string(), Box::new(|| a.auto_resize()) );
         a
     }
 
+	/// Permet de recalculer la matrix
+	/// En fonction de la taille du buffer
     pub fn auto_resize(&self) {
     	println!("auto resize {:?}", self.pixel_buffer);
     }
@@ -246,7 +270,7 @@ impl BillyEngine {
         self.sd.size()
     }
 
-	/// Dessine la matrix
+	/// Dessine le buffer
     pub fn draw(&mut self) {
     	let _ = self.stdout.execute(terminal::Clear(terminal::ClearType::All));
     	for h in 0..self.pixel_buffer.len() {
@@ -259,6 +283,7 @@ impl BillyEngine {
     }
 
 	/// Veriffie la position
+	/// Permet de savoir si la position du buffer ne depace pas la taille max
     pub fn verfif_position(&self, pixel: i16, max: i16) -> bool {
         let mut verif = false;
         const MIN: i16=0;
@@ -268,15 +293,19 @@ impl BillyEngine {
         return  verif;
     }
 
-	/// Place un pixel dans la matrix
+	/// Place un pixel dans le buffer
+	/// 'px' position x
+	/// 'py' position y
     pub fn put_pixel(&mut self, px: i16, py: i16, character: char) {
 		self.sd.refresh();
         if  self.verfif_position(px, self.sd.width as i16)
-            && self.verfif_position(py, self.sd.heigth as i16){
+            && self.verfif_position(py, self.sd.height as i16){
             self.pixel_buffer[py as usize][px as usize] = character;
         }
     }
 
+	/// Permet de poser un objet générique dans le buffer
+	/// L'objet dois posséder le trait FormeGraphique
     pub fn put_object(&mut self, object: impl FormeGraphique) {
     	let position = object.get_position();
     	let size = object.get_size();
@@ -293,6 +322,8 @@ impl BillyEngine {
     }
 
 	/// Place un texte
+	/// 'texte' Texte a placer dans le buffer
+	/// Position du texte dans le buffer
     pub fn put_texte(&mut self, texte: &str, position: Point) {
         const OFFSET: i16 = 1;
         let mut position_x = position.get_x();
@@ -309,7 +340,8 @@ impl BillyEngine {
         }
     }
 
-	/// Place un triangle
+	/// Place un triangle dans le buffer
+	/// 'triangle' Place objet de la classe triangle dans le Buffer
     pub fn put_triangle(&mut self, triangle: &Triangle) {
         let ymin = isize::from(triangle.get_min().get_y());
         let ymax = isize::from(triangle.get_max().get_y());
@@ -317,7 +349,7 @@ impl BillyEngine {
         let xmax = isize::from(triangle.get_max().get_x());
 
         for y in ymin..ymax {
-            if 0 <= y && y < self.sd.heigth as isize {
+            if 0 <= y && y < self.sd.height as isize {
                 for x in xmin..xmax  {
                     if 0 <= x && x < self.sd.width as isize {
                         let x = x as i16;
@@ -335,6 +367,7 @@ impl BillyEngine {
 		}
     }
     /// Remplace toute les valeurs de la Matrix
+    /// 'character' passe en parmaètre le char de remplacement
 	pub fn clear(&mut self, character: char) {
 		for h in 0..self.pixel_buffer.len() {
     		for w in 0..self.pixel_buffer[h].len() {
@@ -344,6 +377,7 @@ impl BillyEngine {
 	}
 }
 
+///
 pub fn create_default_engine() -> Arc<Mutex<BillyEngine>> {
 	let engine = Arc::new(Mutex::new(BillyEngine::new()));
 	subscribe("RESIZE", {
