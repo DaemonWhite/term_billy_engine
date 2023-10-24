@@ -21,6 +21,13 @@ impl ListEvent {
         }
     }
 
+    pub  fn create(&mut self, name: &str) {
+    	let mut subscriptions = self.subscriptions.lock().unwrap();
+    	subscriptions
+    		.entry(name.to_string())
+    		.or_insert(Vec::new());
+    }
+
 	/// Permet de ce souscrire à un évènement et le crée si non existant
 	/// 'event' Nom de l'évènement
 	/// 'callback' méthode à lier à l'évènement
@@ -44,12 +51,16 @@ impl ListEvent {
     pub fn publish(&self, event: &str) {
         let subscriptions = self.subscriptions.lock().unwrap();
         if let Some(callbacks) = subscriptions.get(event) {
-            println!("o");
 			for callback in callbacks.iter() {
                 callback();
             }
         }
     }
+}
+
+pub fn create(name: &str) {
+	let mut le = LE.lock().unwrap();
+	le.create(name);
 }
 
 /// Permet de ce souscrit au gestionaire d'evènements Global
