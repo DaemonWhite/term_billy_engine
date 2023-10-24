@@ -12,7 +12,17 @@ use std::io::{self, Write, Stdout};
 #[doc(hidden)]
 extern crate crossterm;
 #[doc(hidden)]
-use crossterm::{ ExecutableCommand, terminal, cursor};
+use crossterm::{
+	ExecutableCommand,
+	terminal::{
+		enable_raw_mode,
+		disable_raw_mode,
+		size,
+		Clear,
+		ClearType
+		},
+	cursor
+};
 
 ///Gestion d'un tableau à deux dimesion
 #[derive(Clone, Copy, Ord, Eq, PartialEq, PartialOrd, Debug)]
@@ -86,7 +96,7 @@ pub struct ScreenData {
 impl ScreenData {
     pub fn new() -> ScreenData {
         let offset: u8= 0;
-		let (terminal_width, mut terminal_height) = terminal::size().unwrap();
+		let (terminal_width, mut terminal_height) = size().unwrap();
         terminal_height -= offset as u16;
         ScreenData {
             width: terminal_width,
@@ -109,7 +119,7 @@ impl ScreenData {
 
     ///Permet de recalculer la taille de la fenètre
     pub fn refresh(&mut self) {
-        let (terminal_width, terminal_height) = terminal::size().unwrap();
+        let (terminal_width, terminal_height) = size().unwrap();
         self.width = terminal_width;
         self.height = terminal_height- self.offset as u16;
     }
@@ -214,6 +224,12 @@ pub struct BillyEngine {
     pixel_buffer: Vec<Vec<char>>,
 }
 
+impl Drop for BillyEngine {
+	fn drop(&mut self) {
+		self.cleanup();
+	}
+}
+
 /// Moteur graphique du jeux
 /// Le moteur dépend des événements pour fonctionner
 /// L'une des méthode pour ajouter a l'évènement et de le mettre
@@ -251,7 +267,9 @@ impl BillyEngine {
         width.resize(sd.width as usize, DEFAULT_CHAR);
         let mut pixel_buffer: Vec<Vec<char>> = Vec::new();
         pixel_buffer.resize(sd.height as usize - sd.offset as usize, width);
-        //event::add_event("RESIZE".to_string());
+
+        let _ = enable_raw_mode();
+
         let a = BillyEngine {
         	stdout: std,
             sd: sd,
@@ -270,14 +288,19 @@ impl BillyEngine {
         self.sd.size()
     }
 
+    pub fn cleanup(&self) {
+    	let _ = disable_raw_mode();
+		println!("Merci d'avoir utilisée le billy engine\r");
+    }
+
 	/// Dessine le buffer
     pub fn draw(&mut self) {
-    	let _ = self.stdout.execute(terminal::Clear(terminal::ClearType::All));
+    	let _ = self.stdout.execute(Clear(ClearType::All));
     	for h in 0..self.pixel_buffer.len() {
     		for w in 0..self.pixel_buffer[h].len() {
     			print!("{}", self.pixel_buffer[h][w]);
     		}
-    		print!("\n")
+    		print!("\n\r")
     	}
     	let _ = self.stdout.flush();
     }
