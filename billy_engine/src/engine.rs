@@ -256,7 +256,7 @@ impl Drop for BillyEngine {
 ///			engine.auto_resize();
 ///		}
 ///	});
-/// Remet le terminal dans son état normal
+/// // Remet le terminal dans son état normal
 /// let engine = engine.lock().unwrap();
 /// engine.cleanup();
 /// ```
