@@ -25,7 +25,7 @@ use crossterm::{
 };
 
 ///Gestion d'un tableau à deux dimesion
-#[derive(Clone, Copy, Ord, Eq, PartialEq, PartialOrd, Debug)]
+#[derive(Clone, Copy, Ord, Eq, PartialEq, PartialOrd, Debug, Default)]
 pub struct Point {
 	x: i16,
 	y: i16
