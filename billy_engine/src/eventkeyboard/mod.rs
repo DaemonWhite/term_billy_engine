@@ -1,5 +1,6 @@
 pub mod eventkeyboard {
 	use std::{io, time::Duration};
+	use std::thread;
 	use std::sync::{Arc, Mutex};
 	use lazy_static::lazy_static;
 	use crossterm::event::{Event,read, poll, KeyCode, KeyEvent};
@@ -29,6 +30,8 @@ pub mod eventkeyboard {
 	static mut LISTEN_KEYBOARD: bool= true;
 
 	pub trait ControllerUi {
+		fn enable_sensible(&mut self);
+		fn disable_sensible(&mut self);
 		fn key_up(&mut self);
 		fn key_down(&mut self);
 		fn key_right(&mut self);
@@ -121,16 +124,17 @@ pub mod eventkeyboard {
 
 	fn registery_keys(event: KeyEvent) {
 		let event = event.code;
-		subscribe("END_ENGINE", end_keyboard);
-		match event {
-			KeyCode::Enter => publish(KEYS_ENTER),
-			KeyCode::Up => publish(KEYS_UP),
-			KeyCode::Down => publish(KEYS_DOWN),
-			KeyCode::Right => publish(KEYS_RIGHT),
-			KeyCode::Left => publish(KEYS_LEFT),
-			KeyCode::Esc => publish(KEYS_ESC),
-			_ => eprintln!("No Keys registery\r")
-		}
+		thread::spawn(move || {
+			match event {
+				KeyCode::Enter => publish(KEYS_ENTER),
+				KeyCode::Up => publish(KEYS_UP),
+				KeyCode::Down => publish(KEYS_DOWN),
+				KeyCode::Right => publish(KEYS_RIGHT),
+				KeyCode::Left => publish(KEYS_LEFT),
+				KeyCode::Esc => publish(KEYS_ESC),
+				_ => eprintln!("No Keys registery\r")
+			}
+		});
 	}
 
 	pub fn listen_keys() -> io::Result<()> {
