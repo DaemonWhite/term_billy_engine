@@ -22,7 +22,7 @@ pub fn demo_triangle() {
     let terminal_resolution: String = format!("V0.0.1A   R{}X{}", engine.get_resolution().0, engine.get_resolution().1);
     let terminal_resolution: &str = terminal_resolution.as_str();
     let mut triangle = Triangle::new(p1,p2,p3);
-    for _i in 0..209 {
+    for _i in 0..200 {
         engine.clear('-');
         engine.put_texte(terminal_resolution, v);
         engine.put_texte("Billy Engine Pour les Seigneurs de FE", p0);
@@ -33,6 +33,18 @@ pub fn demo_triangle() {
         triangle.translate_point(0, 1, 0);
         triangle.translate(1, 0);
     }
-    println!("{}", count);
-    println!("{:?}", engine.get_resolution());
+    println!("nb cicle : {}\r", count);
+    println!("{:?}\r", engine.get_resolution());
+    thread::sleep(time::Duration::from_secs(5));
+}
+
+pub fn info() {
+	let mut engine = BillyEngine::new();
+	let terminal_resolution: String = format!("V0.0.1A   R{}X{}", engine.get_resolution().0, engine.get_resolution().1);
+    let terminal_resolution: &str = terminal_resolution.as_str();
+    let v = Point::new(1, 0);
+    engine.clear('-');
+    engine.put_texte(terminal_resolution, v);
+    engine.draw();
+	thread::sleep(time::Duration::from_secs(10));
 }

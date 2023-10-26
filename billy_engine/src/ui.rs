@@ -1,5 +1,8 @@
+use std::sync::{Arc, Mutex};
+
 use crate::engine::Point;
 use crate::{DEFAULT_CHAR,DEFAULT_CHAR_SELECT, DEFAULT_CHAR_BORDER};
+use crate::eventkeyboard::eventkeyboard::{ControllerUi, link_event_keyboard};
 type Callback = fn();
 
 fn error_callback() {
@@ -20,7 +23,7 @@ pub struct Element {
 	id: u16,
 	title: String,
 	is_select: bool,
-	action: Callback,
+	call_action: Callback,
 }
 
 impl Element {
@@ -29,14 +32,14 @@ impl Element {
 			id: id,
 			title: s,
 			is_select: false,
-			action: (error_callback)
+			call_action: (error_callback)
 		}
 	}
 	pub fn set_name(&mut self, title: String) {
 		self.title = title;
 	}
 	pub fn set_action(&mut self, c: Callback) {
-		self.action = c;
+		self.call_action = c;
 	}
 	pub fn set_select(&mut self, select: bool) {
 		if !self.is_select && select {
@@ -58,16 +61,17 @@ impl Element {
 		self.is_select
 	}
 	pub fn action(&self) {
-		self.action;
+		(self.call_action)();
 	}
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Boxe {
 	size: [u16; 2],
 	position: Point,
 	title: String,
 	image: Vec<Vec<char>>,
+	visble: bool
 }
 
 impl Boxe {
@@ -82,6 +86,7 @@ impl Boxe {
 			position: Point::new(1,1),
 			title,
 			image: h,
+			visble: true
 		}
 	}
 
@@ -209,18 +214,60 @@ pub struct BoxeElement {
 	elements: Vec<Element>,
 	selector: usize,
 	multi_select: bool,
-	nb_element: usize
+	nb_element: usize,
+	sensible: bool,
+	esc_action: Callback
+}
+
+impl ControllerUi for BoxeElement {
+	fn enable_sensible(&mut self) {
+		self.sensible = true;
+	}
+	fn disable_sensible(&mut self) {
+		self.sensible = false;
+	}
+	fn key_up(&mut self) {
+		if self.sensible {
+			self.up_selector();
+		}
+	}
+	fn key_down(&mut self) {
+		if self.sensible {
+			self.down_selector();
+		}
+	}
+	fn key_right(&mut self) {}
+	fn key_left(&mut self) {}
+	fn key_enter(&mut self) {
+		if self.sensible {
+			self.disable_sensible();
+			self.action();
+			self.enable_sensible();
+		}
+	}
+	fn key_esc(&mut self) {
+		(self.esc_action)();
+	}
+	fn focus(&mut self) {}
 }
 
 impl BoxeElement {
-	pub fn new(title: String) -> Self {
-		BoxeElement {
+	pub fn new(title: String) -> Arc<Mutex<BoxeElement>> {
+		let be = BoxeElement {
 			boxe: Boxe::new(title),
 			elements: Vec::new(),
 			selector: 0,
 			multi_select: false,
-			nb_element: 0
+			nb_element: 0,
+			sensible: true,
+			esc_action: error_callback
+		};
+		let be = Arc::new(Mutex::new(be));
+		{
+			let be = Arc::clone(&be);
+			link_event_keyboard(be);
 		}
+		be
 	}
 	fn render_option(&mut self) {
 		for _e in 0..self.nb_element {
@@ -257,6 +304,23 @@ impl BoxeElement {
 		self.elements[index].set_select(true);
 		self.selector = index ;
 		self.calculate();
+	}
+
+	pub fn up_selector(&mut self) {
+		match self.selector {
+			0 => {self.selector = self.nb_element-1},
+			_ => {self.selector -= 1 },
+		}
+		self.select_elements(self.selector);
+	}
+
+	pub fn down_selector(&mut self) {
+		let end: usize = usize::from(self.nb_element as usize) - 1;
+		match self.selector {
+			_ if self.selector == end => {self.selector = 0},
+			_ => {self.selector += 1 },
+		}
+		self.select_elements(self.selector);
 	}
 
 	pub fn unselect_element(&mut self, index: usize) {
