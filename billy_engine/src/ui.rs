@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-
+use std::thread;
 use crate::engine::Point;
 use crate::{DEFAULT_CHAR,DEFAULT_CHAR_SELECT, DEFAULT_CHAR_BORDER};
 use crate::eventkeyboard::eventkeyboard::{ControllerUi, link_event_keyboard};
@@ -333,7 +333,10 @@ impl BoxeElement {
 	}
 
 	pub fn action(&self) {
-		self.elements[self.selector].action();
+		let element = self.elements[self.selector].clone();
+		thread::spawn(move ||{
+			element.action();
+		});
 	}
 	pub fn add_element(&mut self, name: String) {
 		let el = Element::new(self.nb_element as u16, name);
