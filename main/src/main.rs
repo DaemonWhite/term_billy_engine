@@ -1,6 +1,6 @@
 pub mod demo_engine;
 
-use demo_engine::{demo_triangle, info};
+use demo_engine::{demo_triangle, info, menu, menu_choice, MENU_CHOICE};
 
 static mut GAME_RUN: bool = true;
 
@@ -39,8 +39,12 @@ fn main() {
 		choice_demo.add_element("Info".to_string());
 		choice_demo.add_element("Fermer".to_string());
 		choice_demo.select_elements(0);
-		choice_demo.set_callback_by_ellement(0, demo_triangle);
-		choice_demo.set_callback_by_ellement(1, info);
+		choice_demo.set_callback_by_ellement(0,|| {
+			menu_choice(1);
+		});
+		choice_demo.set_callback_by_ellement(1,|| {
+			menu_choice(2);
+		});
 		choice_demo.set_callback_by_ellement(2, game_end);
 	}
 
@@ -54,16 +58,18 @@ fn main() {
 		let engine = Arc::clone(&engine);
 		let choice_demo = Arc::clone(&choice_demo);
 		move || {
+			let choice_demo = Arc::clone(&choice_demo);
+			let engine = Arc::clone(&engine);
 			unsafe {
 				while GAME_RUN {
-					let _ = enable_raw_mode();
-					thread::sleep(Duration::from_millis(100));
-					let choice_demo = choice_demo.lock().unwrap();
-					let mut engine = engine.lock().unwrap();
-					engine.clear(' ');
-					engine.put_object(choice_demo.clone());
-					engine.put_object(bijour.clone());
-					engine.draw();
+					let choice_demo = Arc::clone(&choice_demo);
+					let engine = Arc::clone(&engine);
+					match MENU_CHOICE {
+						0 => menu(engine, choice_demo, bijour.clone()),
+						1 => demo_triangle(engine),
+						2 => info(engine),
+						_ => println!("no match")
+					}
 				}
 			}
 			publish("GAME_END");
