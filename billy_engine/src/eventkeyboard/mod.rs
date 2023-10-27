@@ -14,6 +14,7 @@ pub mod eventkeyboard {
 	const KEYS_ENTER: &str = "ENTER";
 	const KEYS_ESC: &str = "ESC";
 	const KEYS_FOCUS: &str = "FOCUS";
+	const KEYS_RESIZE: &str = "RESIZE";
 
 	lazy_static! {
 		static ref REGISTERY_KEYS: Vec<&'static str> = vec![
@@ -145,6 +146,7 @@ pub mod eventkeyboard {
 					match read()? {
 						Event::FocusGained => publish(KEYS_FOCUS),
 						Event::Key(event) => registery_keys(event),
+						Event::Resize(_w, _h) => publish("RESIZE"),
 						_ => println!("no match\r"),
 					}
 				}
