@@ -117,11 +117,25 @@ impl ScreenData {
     	self.offset
     }
 
+    pub fn set_resolution(&mut self, width: u16, height: u16) {
+    	self.width = width;
+    	self.height = height - self.offset as u16;
+    }
+
+    pub fn is_changed(&self) -> bool {
+    	let (terminal_width, terminal_height) = size().unwrap();
+
+    	if self.width == terminal_width && self.height == terminal_height {
+    		false
+    	} else {
+    		true
+    	}
+    }
+
     ///Permet de recalculer la taille de la fenètre
     pub fn refresh(&mut self) {
         let (terminal_width, terminal_height) = size().unwrap();
-        self.width = terminal_width;
-        self.height = terminal_height- self.offset as u16;
+        self.set_resolution(terminal_width, terminal_height);
     }
 
     pub fn subscribed_event() {
@@ -267,9 +281,9 @@ impl BillyEngine {
         let mut sd = ScreenData::new();
         sd.set_offset(1);
         let mut width: Vec<char> = Vec::new();
-        width.resize(sd.width as usize, DEFAULT_CHAR);
+        width.resize(sd.get_width() as usize, DEFAULT_CHAR);
         let mut pixel_buffer: Vec<Vec<char>> = Vec::new();
-        pixel_buffer.resize(sd.height as usize - sd.offset as usize, width);
+        pixel_buffer.resize(sd.get_height() as usize -1, width);
 
         let _ = enable_raw_mode();
 
@@ -283,8 +297,31 @@ impl BillyEngine {
 
 	/// Permet de recalculer la matrix
 	/// En fonction de la taille du buffer
-    pub fn auto_resize(&self) {
-    	println!("auto resize {:?}", self.pixel_buffer);
+    pub fn auto_resize(&mut self) {
+    	if self.sd.is_changed() {
+    		self.sd.refresh();
+			let w = self.sd.get_width() as usize;
+			let h = self.sd.get_height() as usize;
+			let old_h = self.pixel_buffer.len();
+			let old_w = self.pixel_buffer[0].len();
+			if h > old_h {
+				let mut empty_width = Vec::new();
+				empty_width.resize(w, DEFAULT_CHAR);
+				self.pixel_buffer.resize(h,  empty_width);
+			} else {
+				self.pixel_buffer.truncate(h);
+			}
+
+			if w > old_w {
+				for h in 0..h {
+					self.pixel_buffer[h].resize(w,  DEFAULT_CHAR);
+				}
+			} else {
+				for h in 0..h {
+					self.pixel_buffer[h].truncate(w);
+				}
+			}
+    	}
     }
 
     pub fn get_resolution(&self) -> (u16, u16) {
@@ -323,7 +360,6 @@ impl BillyEngine {
 	/// 'px' position x
 	/// 'py' position y
     pub fn put_pixel(&mut self, px: i16, py: i16, character: char) {
-		self.sd.refresh();
         if  self.verfif_position(px, self.sd.width as i16)
             && self.verfif_position(py, self.sd.height as i16){
             self.pixel_buffer[py as usize][px as usize] = character;
@@ -409,7 +445,7 @@ pub fn create_default_engine() -> Arc<Mutex<BillyEngine>> {
 	subscribe("RESIZE", {
 		let engine = Arc::clone(&engine);
 		move || {
-			let engine = engine.lock().unwrap();
+			let mut engine = engine.lock().unwrap();
 			engine.auto_resize();
 		}
 	});
