@@ -2,16 +2,19 @@ pub mod demo_engine;
 
 use demo_engine::{demo_triangle, info, menu, menu_choice, MENU_CHOICE};
 
-static mut GAME_RUN: bool = true;
+use std::env;
+use std::sync::Arc;
+use std::thread;
 
 use crossterm::terminal::enable_raw_mode;
+
 use billy_engine::eventkeyboard::eventkeyboard;
 use billy_engine::event::{subscribe, publish};
 use billy_engine::engine::{create_default_engine, Point};
 use billy_engine::ui::{Boxe, BoxeElement, FormeGraphique};
-use std::sync::Arc;
-use std::time::Duration;
-use std::thread;
+use billy_engine::audio;
+
+static mut GAME_RUN: bool = true;
 
 fn game_end() {
 	unsafe {
@@ -19,6 +22,14 @@ fn game_end() {
 	}
 }
 fn main() {
+
+	let args: Vec<String> = env::args().collect();
+
+	if args.len() < 2 {
+        eprintln!("Usage: {} <chemin_du_repertoire_de_l_application>", args[0]);
+        std::process::exit(1);
+    }
+
 	eventkeyboard::init_event_keyboard();
 	let _ = enable_raw_mode();
 	let keyboard = thread::spawn(|| {
@@ -53,6 +64,8 @@ fn main() {
 	bijour.set_title("Bijour".to_string());
 	bijour.set_size(20, 10);
 	bijour.write_text(0, true, &mut coucou);
+
+	audio::test();
 
 	let game = thread::spawn({
 		let engine = Arc::clone(&engine);
