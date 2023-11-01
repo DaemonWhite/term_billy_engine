@@ -1,26 +1,33 @@
 use std::fs::File;
-use std::io::{BufReader, Seek};
-use std::error::Error;
-use std::sync::{Arc, Mutex};
-use rodio::{Decoder, OutputStream, Sink, OutputStreamHandle, Source};
+use std::io::BufReader;
+use std::thread;
+
+use rodio::{decoder::Decoder, OutputStream, Sink, OutputStreamHandle, source::Source, source::Buffered};
+
+#[derive(Clone, Copy, Debug)]
+pub enum ChanelType {
+	Infinite,
+	Simple,
+	Single
+}
 
 pub struct Song {
 	name: String,
 	chanel: usize,
 	path: String,
 	preload: bool,
-	decoder: Option<BufReader<File>>
+	decoder: Option<Buffered<Decoder<BufReader<File>>>>
 }
 
-struct MySource;
-
-
+// TODO Utiliser les HashMap
+// TODO Intégrer l'utiliter des chanels
+// TODO Gérer correctement les threads
 
 impl Song {
 	pub fn new(name: &str, chanel: usize, path: &str, preload: bool) -> Self {
 		let mut song = Song {
 			name: name.to_string(),
-			chanel: 0,
+			chanel: chanel,
 			path: path.to_string(),
 			preload: preload,
 			decoder: None
@@ -39,19 +46,8 @@ impl Song {
 		self.chanel
 	}
 
-	pub fn get_song(&self) -> &BufReader<dyn Seek > {
-		let mut arc_decoder: &BufReader<File>;
-
-		match &self.decoder {
-			Some(decoder) => arc_decoder = decoder,
-			_ =>  {
-				let buf: &BufReader<File> = BufReader::new(File::open(self.path.as_str()).unwrap());
-				arc_decoder = &buf;
-			}
-		}
-
-
-		arc_decoder
+	pub fn get_song(&mut self) -> Option<Buffered<Decoder<BufReader<File>>>> {
+		self.decoder.clone()
 	}
 
 	pub fn is_preload(&self) -> bool {
@@ -59,9 +55,12 @@ impl Song {
 	}
 
 	pub fn load(&mut self) {
-		self.decoder =  Some(
-					BufReader::new(File::open(self.path.as_str()).unwrap())
-				);
+		if self.decoder.is_none() {
+		    let file = File::open(self.path.as_str()).expect("Failed to open file");
+		    let reader = BufReader::new(file);
+		    let decoder = Decoder::new(reader).expect("eee");
+		    self.decoder = Some(decoder.buffered());
+    	}
 	}
 
 	pub fn unload(&mut self) {
@@ -69,15 +68,16 @@ impl Song {
 	}
 }
 
+#[derive(Debug, Clone)]
 pub struct Chanel {
 	id: usize,
-	chanel_type: u8,
+	chanel_type: ChanelType,
 	name: String,
 	volume: f32,
 }
 
 impl Chanel {
-	pub fn new(id: usize, chanel_type: u8, name: &str, volume: f32) -> Self {
+	pub fn new(id: usize, chanel_type: ChanelType, name: &str, volume: f32) -> Self {
 		Chanel {
 			id: id,
 			chanel_type: chanel_type,
@@ -89,7 +89,7 @@ impl Chanel {
 		self.id
 	}
 
-	pub fn get_chanel_type(&self) -> u8 {
+	pub fn get_chanel_type(&self) -> ChanelType {
 		self.chanel_type
 	}
 
@@ -109,23 +109,21 @@ impl Chanel {
 pub struct SongController {
 	list_song: Vec<Song>,
 	list_chanel: Vec<Chanel>,
-	stream_handle: OutputStreamHandle
+	stream: OutputStream,
+	stream_handle: OutputStreamHandle,
+	default_path: String
 }
 
 impl SongController {
-	pub fn new() -> Self {
+	pub fn new(path: &str) -> Self {
 		let (_stream, stream_handle) = OutputStream::try_default().unwrap();
 		SongController {
+			default_path: path.to_string(),
 			list_song: Vec::new(),
 			list_chanel: Vec::new(),
+			stream: _stream,
 			stream_handle: stream_handle
 		}
-	}
-
-	pub fn creat_channel(&mut self, chanel_type: u8, name: &str) {
-		let len = self.list_chanel.len();
-		let chanel = Chanel::new(len, chanel_type, name, 1.0);
-		self.list_chanel.push(chanel);
 	}
 
 	pub fn get_chanel_index(&self, chanel_name: &str) -> f32 {
@@ -169,40 +167,42 @@ impl SongController {
 		iterator
 	}
 
+	pub fn creat_channel(&mut self, chanel_type: ChanelType, name: &str) {
+		let len = self.list_chanel.len();
+		let chanel = Chanel::new(len, chanel_type, name, 1.0);
+		self.list_chanel.push(chanel);
+	}
+
 	pub fn creat_song(&mut self, name: &str, chanel_name: &str, path: &str, preload:bool) {
+		let path = format!("{}/{}",self.default_path, path);
+		println!("{}", path);
 		const NO_VALID: f32 = -1.0;
 		let chanel_index = self.get_chanel_index(chanel_name);
 		if NO_VALID  < chanel_index {
-			let song = Song::new(name, self.list_chanel[chanel_index as usize].get_id(), path, preload);
+			let song = Song::new(name, self.list_chanel[chanel_index as usize].get_id(), path.as_str(), preload);
 			self.list_song.push(song);
 		} else {
 			eprintln!("chanel non existant")
 		}
 	}
 
-	fn read_song(self, song_index: usize) {
-
-		let mut sink = Sink::try_new(&self.stream_handle).unwrap();
-
-		let decoder =  self.list_song[song_index].get_song();
-		let decoder = Decoder::new(decoder);
-		// sink.append(decoder);
-		// sink.play();
-		// sink.sleep_until_end();
-
-		loop {
-			if sink.empty() {
-				break;
-			}
+	fn read_song(&mut self, song_index: usize) {
+		if let Some(decoder) =  self.list_song[song_index].get_song() {
+			let sink = Sink::try_new(&self.stream_handle).unwrap();
+			sink.append(decoder);
+			thread::spawn(move || {
+				sink.play();
+				sink.sleep_until_end();
+			});
 		}
 	}
 
-	fn song_start(&self, song_index: usize) {
+	fn song_start(&mut self, song_index: usize) {
 		let chanel_id = self.list_song[0].get_chanel_id();
 		let chanel_index = self.get_chanel_index_by_id(chanel_id);
 		let Chanel_type = self.list_chanel[chanel_index as usize].get_chanel_type();
 		if self.list_song[song_index].is_preload() {
-
+			self.read_song(song_index)
 		}
 	}
 
@@ -213,33 +213,4 @@ impl SongController {
 			self.song_start(song_index as usize);
 		}
 	}
-}
-
-
-pub fn test() {
-	// Get a output stream handle to the default physical sound device
-	let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-	// Load a sound from a file, using a path relative to Cargo.toml
-	let file = BufReader::new(File::open("examples/04 Flagcarrier.flac").unwrap());
-	// Decode that sound file into a source
-	let source = Decoder::new(file).unwrap();
-
-	// Play the sound directly on the device
-	//let _ = stream_handle.play_raw(source.convert_samples());
-
-	let mut sink = Sink::try_new(&stream_handle).unwrap();
-	sink.append(source);
-	sink.play();
-	sink.sleep_until_end();
-
-	loop {
-		if sink.empty() {
-			break;
-		}
-	}
-
-	// The sound plays in a separate audio thread,
-	// so we need to keep the main thread alive while it's playing.
-	std::thread::sleep(std::time::Duration::from_secs(5));
-
 }

@@ -16,19 +16,35 @@ use billy_engine::audio;
 
 static mut GAME_RUN: bool = true;
 
+// TODO Regler problèmes de redimentionement si fenètre trop petite windows
+
 fn game_end() {
 	unsafe {
 		GAME_RUN = false;
 	}
 }
 fn main() {
-
 	let args: Vec<String> = env::args().collect();
 
-	if args.len() < 2 {
-        eprintln!("Usage: {} <chemin_du_repertoire_de_l_application>", args[0]);
-        std::process::exit(1);
-    }
+	let path: String;
+	match env::current_exe() {
+		Ok(exe_path) => {
+			let mut path_buff = exe_path.to_path_buf();
+			path_buff.pop();
+			path = path_buff.to_str().unwrap().to_string();
+			println!("{}", exe_path.display())
+		},
+		Err(e) => {
+			println!("Erreur : {e}");
+			std::process::exit(1)
+		}
+	}
+
+	let mut song_controller = audio::SongController::new(path.as_str());
+
+    song_controller.creat_channel(audio::ChanelType::Infinite, "music");
+    song_controller.creat_song("billy", "music", "04 Flagcarrier.flac", true);
+    song_controller.played_song("billy");
 
 	eventkeyboard::init_event_keyboard();
 	let _ = enable_raw_mode();
@@ -65,7 +81,7 @@ fn main() {
 	bijour.set_size(20, 10);
 	bijour.write_text(0, true, &mut coucou);
 
-	audio::test();
+	// audio::test();
 
 	let game = thread::spawn({
 		let engine = Arc::clone(&engine);
