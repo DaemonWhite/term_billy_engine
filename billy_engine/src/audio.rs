@@ -3,6 +3,8 @@ use std::io::BufReader;
 use std::thread;
 
 use rodio::{decoder::Decoder, OutputStream, Sink, OutputStreamHandle, source::Source, source::Buffered};
+use rodio::cpal::traits::{DeviceTrait, HostTrait};
+use rodio::cpal::{Device, Host};
 
 #[derive(Clone, Copy, Debug)]
 pub enum ChanelType {
@@ -109,19 +111,26 @@ impl Chanel {
 pub struct SongController {
 	list_song: Vec<Song>,
 	list_chanel: Vec<Chanel>,
-	stream: OutputStream,
+	host: Host,
+	device: Device,
+	_stream: OutputStream,
 	stream_handle: OutputStreamHandle,
 	default_path: String
 }
 
 impl SongController {
 	pub fn new(path: &str) -> Self {
-		let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+		let host = rodio::cpal::default_host();
+		let device = host.default_output_device().expect("No output device available");
+
+		let (_stream, stream_handle) = OutputStream::try_from_device(&device).unwrap();
 		SongController {
 			default_path: path.to_string(),
 			list_song: Vec::new(),
 			list_chanel: Vec::new(),
-			stream: _stream,
+			host: host,
+			device: device,
+			_stream: _stream,
 			stream_handle: stream_handle
 		}
 	}
