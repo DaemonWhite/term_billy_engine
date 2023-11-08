@@ -106,7 +106,7 @@ fn main() {
 	keyboard.join().unwrap();
 	{
 		let engine = Arc::clone(&engine);
-		let engine = engine.lock().unwrap();
+		let mut engine = engine.lock().unwrap();
 		engine.cleanup();
 	}
 	println!("Vous êtes beau\r");

@@ -19,8 +19,10 @@ use crossterm::{
 		disable_raw_mode,
 		size,
 		Clear,
-		ClearType
-		},
+		ClearType,
+		EnterAlternateScreen,
+		LeaveAlternateScreen
+	},
 	cursor
 };
 
@@ -278,6 +280,7 @@ impl BillyEngine {
     pub fn new() -> BillyEngine {
 		let mut std = io::stdout();
 		let _ = std.execute(cursor::Hide);
+		let _ = std.execute(EnterAlternateScreen);
         let mut sd = ScreenData::new();
         sd.set_offset(1);
         let mut width: Vec<char> = Vec::new();
@@ -328,14 +331,16 @@ impl BillyEngine {
         self.sd.size()
     }
 
-    pub fn cleanup(&self) {
+    pub fn cleanup(&mut self) {
     	let _ = disable_raw_mode();
+    	let _ = self.stdout.execute(LeaveAlternateScreen);
 		println!("Merci d'avoir utilisée le billy engine\r");
     }
 
 	/// Dessine le buffer
     pub fn draw(&mut self) {
     	let _ = self.stdout.execute(Clear(ClearType::All));
+    	let _ = self.stdout.flush();
     	for h in 0..self.pixel_buffer.len() {
     		for w in 0..self.pixel_buffer[h].len() {
     			print!("{}", self.pixel_buffer[h][w]);
