@@ -7,6 +7,8 @@ use rodio::{decoder::Decoder, OutputStream, Sink, OutputStreamHandle, source::So
 use rodio::cpal::traits::HostTrait;
 use rodio::cpal::{Device, Host};
 
+use crate::event::{create, publish};
+
 #[derive(Clone, Copy, Debug)]
 pub enum ChanelType {
 	Infinite,
@@ -76,16 +78,24 @@ pub struct Chanel {
 	id: usize,
 	chanel_type: ChanelType,
 	name: String,
+	_event_start: String,
+	_event_end: String,
 	volume: f32,
 	played: Option<JoinHandle<()>>
 }
 
 impl Chanel {
 	pub fn new(id: usize, chanel_type: ChanelType, name: &str, volume: f32) -> Self {
+		let start_play_event: String = format!("{}_play", name).to_string();
+		let stop_play_event: String = format!("{}_stop", name).to_string();
+		create(start_play_event.as_str());
+		create(stop_play_event.as_str());
 		Chanel {
 			id: id,
 			chanel_type: chanel_type,
 			name: name.to_string(),
+			_event_start: start_play_event,
+			_event_end: stop_play_event,
 			volume: volume,
 			played: None
 		}
@@ -120,9 +130,13 @@ impl Chanel {
 
 	pub fn playe_chanel (&mut self, decoder: Buffered<Decoder<BufReader<File>>>, sink: Sink) {
 		sink.append(decoder);
+		let event_start = self._event_start.clone();
+		let event_stop = self._event_end.clone();
 		self.played = Some(thread::spawn(move || {
+			publish(event_start.as_str());
 			sink.play();
 			sink.sleep_until_end();
+			publish(event_stop.as_str());
 		}));
 	}
 }
