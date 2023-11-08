@@ -1,9 +1,10 @@
 use std::fs::File;
 use std::io::BufReader;
 use std::thread;
+use std::thread::JoinHandle;
 
 use rodio::{decoder::Decoder, OutputStream, Sink, OutputStreamHandle, source::Source, source::Buffered};
-use rodio::cpal::traits::{DeviceTrait, HostTrait};
+use rodio::cpal::traits::HostTrait;
 use rodio::cpal::{Device, Host};
 
 #[derive(Clone, Copy, Debug)]
@@ -70,12 +71,13 @@ impl Song {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Chanel {
 	id: usize,
 	chanel_type: ChanelType,
 	name: String,
 	volume: f32,
+	played: Option<JoinHandle<()>>
 }
 
 impl Chanel {
@@ -84,7 +86,8 @@ impl Chanel {
 			id: id,
 			chanel_type: chanel_type,
 			name: name.to_string(),
-			volume: volume
+			volume: volume,
+			played: None
 		}
 	}
 	pub fn get_id(&self) -> usize {
@@ -106,13 +109,29 @@ impl Chanel {
 	pub fn set_volume(&mut self, volume: f32) {
 		self.volume = volume;
 	}
+
+	pub fn is_played(&self) -> bool {
+		if let Some(played) = &self.played {
+			played.is_finished()
+		} else {
+			true
+		}
+	}
+
+	pub fn playe_chanel (&mut self, decoder: Buffered<Decoder<BufReader<File>>>, sink: Sink) {
+		sink.append(decoder);
+		self.played = Some(thread::spawn(move || {
+			sink.play();
+			sink.sleep_until_end();
+		}));
+	}
 }
 
 pub struct SongController {
 	list_song: Vec<Song>,
 	list_chanel: Vec<Chanel>,
-	host: Host,
-	device: Device,
+	_host: Host,
+	_device: Device,
 	_stream: OutputStream,
 	stream_handle: OutputStreamHandle,
 	default_path: String
@@ -128,8 +147,8 @@ impl SongController {
 			default_path: path.to_string(),
 			list_song: Vec::new(),
 			list_chanel: Vec::new(),
-			host: host,
-			device: device,
+			_host: host,
+			_device: device,
 			_stream: _stream,
 			stream_handle: stream_handle
 		}
@@ -195,23 +214,24 @@ impl SongController {
 		}
 	}
 
-	fn read_song(&mut self, song_index: usize) {
+	fn read_song(&mut self, song_index: usize, chanel_index: usize) {
 		if let Some(decoder) =  self.list_song[song_index].get_song() {
 			let sink = Sink::try_new(&self.stream_handle).unwrap();
-			sink.append(decoder);
-			thread::spawn(move || {
-				sink.play();
-				sink.sleep_until_end();
-			});
+			self.list_chanel[chanel_index].playe_chanel(decoder, sink);
 		}
 	}
 
 	fn song_start(&mut self, song_index: usize) {
 		let chanel_id = self.list_song[0].get_chanel_id();
-		let chanel_index = self.get_chanel_index_by_id(chanel_id);
-		let Chanel_type = self.list_chanel[chanel_index as usize].get_chanel_type();
-		if self.list_song[song_index].is_preload() {
-			self.read_song(song_index)
+		let chanel_index: usize = self.get_chanel_index_by_id(chanel_id) as usize;
+		let chanel_type = self.list_chanel[chanel_index].get_chanel_type();
+		if !self.list_song[song_index].is_preload() {
+			self.list_song[song_index].load();
+		}
+		match chanel_type {
+			ChanelType::Single => self.read_song(song_index, chanel_index),
+			ChanelType::Infinite => println!("loop"),
+			ChanelType::Simple => println!("Simple")
 		}
 	}
 

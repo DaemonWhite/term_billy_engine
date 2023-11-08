@@ -24,8 +24,6 @@ fn game_end() {
 	}
 }
 fn main() {
-	let args: Vec<String> = env::args().collect();
-
 	let path: String;
 	match env::current_exe() {
 		Ok(exe_path) => {
@@ -42,7 +40,7 @@ fn main() {
 
 	let mut song_controller = audio::SongController::new(path.as_str());
 
-    song_controller.creat_channel(audio::ChanelType::Infinite, "music");
+    song_controller.creat_channel(audio::ChanelType::Single, "music");
     song_controller.creat_song("billy", "music", "04 Flagcarrier.flac", true);
     song_controller.played_song("billy");
 
