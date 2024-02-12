@@ -7,13 +7,13 @@ cargo_opt += [ '--target-dir', meson.project_build_root()  / 'src' ]
 cargo_env  = [ 'CARGO_HOME=' + meson.project_build_root()  / 'cargo-home' ]
 
 if get_option('buildtype') == 'release'
-  cargo_options += [ '--release' ]
+  cargo_opt += [ '--release' ]
   rust_target = 'release'
 else
   rust_target = 'debug'
 endif
 
-cargo_build = custom_target(
+custom_target(
   'cargo-build',
   build_by_default: true,
   build_always_stale: true,
@@ -27,3 +27,10 @@ cargo_build = custom_target(
     cargo_opt, '&&', 'cp', 'src' / rust_target / meson.project_name(), '@OUTPUT@',
   ]
 )
+
+
+cargo_env += ['RUST_BACKTRACE=1']
+
+cargo_opt_test = [ '--manifest-path', meson.project_source_root() / 'Cargo.toml' ]
+test('test engine', cargo_bin, env : cargo_env, args: ['test', '--test=test_engine', cargo_opt_test])
+test('test term engine', cargo_bin, env : cargo_env, args: ['test', '--test=test_engine_exclude_gitaction', cargo_opt_test])
