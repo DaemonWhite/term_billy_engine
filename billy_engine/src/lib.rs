@@ -1,9 +1,9 @@
+pub mod audio;
 pub mod engine;
-pub mod maths;
-pub mod ui;
 pub mod event;
 pub mod eventkeyboard;
-pub mod audio;
+pub mod maths;
+pub mod ui;
 
 const DEFAULT_CHAR: char = ' ';
 const DEFAULT_CHAR_SELECT: char = '*';

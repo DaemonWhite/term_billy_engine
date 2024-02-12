@@ -1,11 +1,9 @@
-use std::sync::{Mutex, Arc};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 lazy_static! {
-	static ref LE: Mutex<ListEvent> = Mutex::new(
-		ListEvent::new()
-	);
+    static ref LE: Mutex<ListEvent> = Mutex::new(ListEvent::new());
 }
 
 type Event = String;
@@ -21,37 +19,33 @@ impl ListEvent {
         }
     }
 
-    pub  fn create(&mut self, name: &str) {
-    	let mut subscriptions = self.subscriptions.lock().unwrap();
-    	subscriptions
-    		.entry(name.to_string())
-    		.or_insert(Vec::new());
+    pub fn create(&mut self, name: &str) {
+        let mut subscriptions = self.subscriptions.lock().unwrap();
+        subscriptions.entry(name.to_string()).or_insert(Vec::new());
     }
 
-	/// Permet de ce souscrire à un évènement et le crée si non existant
-	/// 'event' Nom de l'évènement
-	/// 'callback' méthode à lier à l'évènement
+    /// Permet de ce souscrire à un évènement et le crée si non existant
+    /// 'event' Nom de l'évènement
+    /// 'callback' méthode à lier à l'évènement
     pub fn subscribe<F>(&self, event: &str, callback: F)
     where
         F: Fn() + Send + 'static,
     {
         let mut subscriptions = self.subscriptions.lock().unwrap();
-        if let Some(add_call) = subscriptions.get_mut(event){
-			add_call.push(Box::new(callback));
+        if let Some(add_call) = subscriptions.get_mut(event) {
+            add_call.push(Box::new(callback));
         } else {
             let v: Vec<Box<dyn Fn() + Send>> = vec![Box::new(callback)];
-            subscriptions
-            	.entry(event.to_string())
-            	.or_insert(v);
+            subscriptions.entry(event.to_string()).or_insert(v);
         }
     }
 
-	///Appelle un évènement
-	/// 'event' &str nom de l'evencement
+    ///Appelle un évènement
+    /// 'event' &str nom de l'evencement
     pub fn publish(&self, event: &str) {
         let subscriptions = self.subscriptions.lock().unwrap();
         if let Some(callbacks) = subscriptions.get(event) {
-			for callback in callbacks.iter() {
+            for callback in callbacks.iter() {
                 callback();
             }
         }
@@ -59,21 +53,21 @@ impl ListEvent {
 }
 
 pub fn create(name: &str) {
-	let mut le = LE.lock().unwrap();
-	le.create(name);
+    let mut le = LE.lock().unwrap();
+    le.create(name);
 }
 
 /// Permet de ce souscrit au gestionaire d'evènements Global
 pub fn subscribe<F>(name: &str, c: F)
-	where
-		F: Fn() + Send + 'static,
-	{
-	let le = LE.lock().unwrap();
-	le.subscribe(name, c);
+where
+    F: Fn() + Send + 'static,
+{
+    let le = LE.lock().unwrap();
+    le.subscribe(name, c);
 }
 
 /// Appelle un évènement
 pub fn publish(name: &str) {
-	let le = LE.lock().unwrap();
-	le.publish(name);
+    let le = LE.lock().unwrap();
+    le.publish(name);
 }

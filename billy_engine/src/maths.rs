@@ -1,4 +1,4 @@
-pub(crate) use min_max::{min, max};
+pub(crate) use min_max::{max, min};
 
 use crate::engine::Point;
 
@@ -27,7 +27,6 @@ macro_rules! min_point {
     	)
     };
 }
-
 
 /// Maco max_point
 /// * p Passe en mètres 1 poins ou plus
@@ -63,29 +62,30 @@ pub fn teste_macro() {
 
     println!("{:?}", p1);
 
-    let t_min = min_point!(p1,p2,p3);
-    let t_max = max_point!(p1,p2,p3);
+    let t_min = min_point!(p1, p2, p3);
+    let t_max = max_point!(p1, p2, p3);
 
     println!("n min : {:?}", min_point!(p1, p2, p3));
 
-    println!(" -- list point -- \n{:?}\n{:?}\n{:?}\nResult : {:?}\n", p1, p2, p3, t_min);
-    println!(" -- list point -- \n{:?}\n{:?}\n{:?}\nResult : {:?}", p1, p2, p3, t_max);
-
+    println!(
+        " -- list point -- \n{:?}\n{:?}\n{:?}\nResult : {:?}\n",
+        p1, p2, p3, t_min
+    );
+    println!(
+        " -- list point -- \n{:?}\n{:?}\n{:?}\nResult : {:?}",
+        p1, p2, p3, t_max
+    );
 }
-
 
 /// Constuire un triangle à partir de ces point
 /// * 'position' Donne la position à analisée
 /// * 'p1' Point de refèrence 1
 /// * 'p2' Point de reference 2
 pub fn eq_triangle(position: Point, p1: Point, p2: Point) -> i16 {
-    let _eq: i16 =
-        (p1.get_x() - position.get_x()) *
-        (p2.get_y() - position.get_y() ) -
-        (p1.get_y() - position.get_y()) *
-        (p2.get_x() - position.get_x());
+    let _eq: i16 = (p1.get_x() - position.get_x()) * (p2.get_y() - position.get_y())
+        - (p1.get_y() - position.get_y()) * (p2.get_x() - position.get_x());
     _eq
 }
 
-pub(crate) use min_point;
 pub(crate) use max_point;
+pub(crate) use min_point;
